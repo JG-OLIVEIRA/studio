@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -25,14 +26,15 @@ interface ComboboxProps {
     onChange: (value: string) => void;
     placeholder?: string;
     createLabel?: string;
+    disabled?: boolean;
 }
 
-export function Combobox({ options, value, onChange, placeholder, createLabel }: ComboboxProps) {
+export function Combobox({ options, value, onChange, placeholder, createLabel, disabled = false }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
   
   const handleSelect = (currentValue: string) => {
-    onChange(currentValue === value ? "" : currentValue)
+    onChange(currentValue.toLowerCase() === value.toLowerCase() ? "" : currentValue)
     setOpen(false)
   }
 
@@ -43,6 +45,7 @@ export function Combobox({ options, value, onChange, placeholder, createLabel }:
     }
   }
 
+  // Find the label matching the current value, case-insensitively.
   const currentLabel = options.find((option) => option.value.toLowerCase() === value.toLowerCase())?.label || value;
 
   return (
@@ -53,8 +56,11 @@ export function Combobox({ options, value, onChange, placeholder, createLabel }:
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
+          disabled={disabled}
         >
-          {value ? currentLabel : placeholder || "Select option..."}
+          <span className="truncate">
+            {value ? currentLabel : placeholder || "Select option..."}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -67,7 +73,7 @@ export function Combobox({ options, value, onChange, placeholder, createLabel }:
           />
           <CommandList>
             <CommandEmpty>
-                {createLabel && (
+                {createLabel && inputValue && (
                     <div className="p-1">
                         <Button
                             variant="ghost"

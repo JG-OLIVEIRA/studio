@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, type ReactNode } from 'react';
@@ -20,7 +21,6 @@ import {
     DialogTitle,
     DialogDescription,
   } from './ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -61,10 +61,6 @@ export function AddTeacherOrReviewDialog({
 }: AddTeacherOrReviewDialogProps) {
   const [hoverRating, setHoverRating] = useState(0);
 
-  const subjectOptions = useMemo(() => {
-    return allSubjectNames.map(name => ({ value: name, label: name }));
-  }, [allSubjectNames]);
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -75,8 +71,20 @@ export function AddTeacherOrReviewDialog({
     },
   });
 
-  const teacherName = useWatch({ control: form.control, name: 'teacherName' });
   const subjectName = useWatch({ control: form.control, name: 'subjectName' });
+  const teacherName = useWatch({ control: form.control, name: 'teacherName' });
+
+  const subjectOptions = useMemo(() => {
+    return allSubjectNames.map(name => ({ value: name, label: name }));
+  }, [allSubjectNames]);
+
+  const teacherOptions = useMemo(() => {
+    if (!subjectName) return [];
+    return allTeachers
+        .filter(t => t.subject.toLowerCase() === subjectName.toLowerCase())
+        .map(t => ({ value: t.name, label: t.name }));
+  }, [subjectName, allTeachers]);
+
 
   const teacherExists = useMemo(() => {
     if (!teacherName || !subjectName) return false;
@@ -107,19 +115,6 @@ export function AddTeacherOrReviewDialog({
                 <div className="grid grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
-                        name="teacherName"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Nome do Professor</FormLabel>
-                            <FormControl>
-                                <Input placeholder="ex: Sr. Smith" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
                         name="subjectName"
                         render={({ field }) => (
                         <FormItem>
@@ -127,12 +122,33 @@ export function AddTeacherOrReviewDialog({
                              <Combobox
                                 options={subjectOptions}
                                 value={field.value}
-                                onChange={field.onChange}
+                                onChange={(value) => {
+                                    field.onChange(value);
+                                    form.setValue('teacherName', ''); // Reset teacher when subject changes
+                                }}
                                 placeholder="Selecione ou crie..."
                                 createLabel="Criar matéria:"
                             />
                             <FormMessage />
                         </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="teacherName"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Nome do Professor</FormLabel>
+                             <Combobox
+                                options={teacherOptions}
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder={subjectName ? "Selecione ou crie..." : "Escolha uma matéria"}
+                                createLabel="Criar professor:"
+                                disabled={!subjectName}
+                            />
+                            <FormMessage />
+                            </FormItem>
                         )}
                     />
                 </div>
