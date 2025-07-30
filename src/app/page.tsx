@@ -1,38 +1,10 @@
 import { GraduationCap } from 'lucide-react';
 import { getSubjectsData } from '@/app/actions';
 import TeacherRateClient from '@/components/teacher-rate-client';
-import { TopTeacherCard } from '@/components/top-teacher-card';
-import type { Teacher } from '@/lib/types';
-import CourseFlowchart from '@/components/course-flowchart';
-
-const calculateAverageRating = (teacher: Teacher) => {
-  if (teacher.reviews.length === 0) return 0;
-  const total = teacher.reviews.reduce((acc, review) => acc + review.rating, 0);
-  return total / teacher.reviews.length;
-};
 
 export default async function Home() {
   // Fetch data on the server before rendering the page.
   const subjectsData = await getSubjectsData();
-
-  const allTeachers = subjectsData.flatMap(s => 
-    s.teachers.map(t => ({
-      ...t,
-      subject: s.name,
-      averageRating: calculateAverageRating(t)
-    }))
-  ).filter(t => t.reviews.length > 0);
-
-  const topTeacher = allTeachers.length > 0 
-    ? allTeachers.reduce((prev, current) => (prev.averageRating > current.averageRating) ? prev : current)
-    : null;
-
-  const handleSubjectClick = (subjectName: string) => {
-    const element = document.getElementById(`subject-title-${subjectName.replace(/\s+/g, '-')}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }
 
   return (
     <main className="min-h-screen w-full bg-background font-sans">
@@ -48,8 +20,6 @@ export default async function Home() {
             Descubra os melhores professores, avaliados por alunos como você.
           </p>
         </header>
-        
-        {topTeacher && <TopTeacherCard teacher={topTeacher} />}
 
         {/* All client-side interactions are now handled in this component */}
         <TeacherRateClient initialSubjectsData={subjectsData} />

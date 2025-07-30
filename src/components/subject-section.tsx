@@ -28,7 +28,11 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
     }))
     .sort((a, b) => {
       // Sort by average rating in descending order
-      return b.averageRating - a.averageRating;
+      if (b.averageRating !== a.averageRating) {
+        return b.averageRating - a.averageRating;
+      }
+      // If ratings are equal, sort by number of reviews
+      return b.reviews.length - a.reviews.length;
     });
 
   const Icon = getIconComponent(subject.iconName);
@@ -45,10 +49,11 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
         <CardContent className="p-4 md:p-6">
           {sortedTeachers.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {sortedTeachers.map((teacher) => (
+              {sortedTeachers.map((teacher, index) => (
                 <TeacherCard
                   key={teacher.id}
                   teacher={{...teacher, subject: subject.name}}
+                  isTopTeacher={index === 0 && teacher.averageRating > 0}
                 />
               ))}
             </div>

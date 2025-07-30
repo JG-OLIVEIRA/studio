@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Sparkles, MessageSquarePlus, Eye } from 'lucide-react';
+import { Sparkles, MessageSquarePlus, Eye, Trophy } from 'lucide-react';
 import type { Teacher } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,9 +15,10 @@ import { ViewReviewsDialog } from './view-reviews-dialog';
 
 interface TeacherCardProps {
   teacher: Teacher;
+  isTopTeacher?: boolean;
 }
 
-export default function TeacherCard({ teacher }: TeacherCardProps) {
+export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCardProps) {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   const handleAddReview = async (data: ReviewFormValues) => {
@@ -47,11 +48,13 @@ export default function TeacherCard({ teacher }: TeacherCardProps) {
   return (
     <Card
       className={cn(
-        'flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1'
+        'flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
+        isTopTeacher && 'border-primary border-2 shadow-primary/20'
       )}
     >
       <CardHeader className="flex-row items-start justify-between gap-4 pb-4">
         <CardTitle className="text-lg font-semibold">{teacher.name}</CardTitle>
+        {isTopTeacher && <Trophy className="h-6 w-6 text-amber-400" />}
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="flex items-center gap-2">
