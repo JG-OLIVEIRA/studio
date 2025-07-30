@@ -37,11 +37,16 @@ function assignIconName(subjectName: string): string {
     return 'GraduationCap';
 }
 
+// Variável para garantir que a inicialização ocorra apenas uma vez.
+let dbInitialized = false;
+
 /**
  * Garante que as tabelas necessárias existam e sincroniza as matérias.
  * Esta função é chamada apenas uma vez para evitar deadlocks.
  */
 async function initializeDatabase() {
+    if (dbInitialized) return;
+
     const client = await pool.connect();
     try {
         // Criação de tabelas
@@ -111,6 +116,7 @@ async function initializeDatabase() {
         }
         await client.query('COMMIT');
         
+        dbInitialized = true; // Marca como inicializado
     } catch (error) {
         await client.query('ROLLBACK');
         console.error("Erro ao inicializar o banco de dados:", error);
@@ -144,7 +150,8 @@ export async function getSubjects(): Promise<Subject[]> {
         text: review.text,
         upvotes: review.upvotes,
         downvotes: review.downvotes,
-        createdAt: review.created_at,
+        // Garante que a data seja uma string no formato ISO, que é segura para serialização
+        createdAt: review.created_at.toISOString(),
       });
       return acc;
     }, {} as Record<number, Review[]>);
