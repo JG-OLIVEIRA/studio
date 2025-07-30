@@ -20,6 +20,7 @@ interface TeacherCardProps {
 export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCardProps) {
   const [isAddReviewOpen, setIsAddReviewOpen] = useState(false);
 
+  // A média agora vem pré-calculada do data-service
   const averageRating = teacher.averageRating ?? 0;
   
   const hasReviews = teacher.reviews.length > 0;
@@ -37,11 +38,17 @@ export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCa
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="flex items-center gap-2">
-          <StarRating rating={averageRating} />
-          {hasReviews && <span className="text-sm font-bold text-muted-foreground">{averageRating.toFixed(1)}</span>}
+            {hasReviews ? (
+                <>
+                    <StarRating rating={averageRating} />
+                    <span className="text-sm font-bold text-muted-foreground">{averageRating.toFixed(1)}</span>
+                </>
+            ) : (
+                 <StarRating rating={0} />
+            )}
         </div>
          <p className="text-sm text-muted-foreground mt-2">
-          {hasReviews ? `${teacher.reviews.length} avaliações` : "Nenhuma avaliação ainda"}
+          {hasReviews ? `${teacher.reviews.length} ${teacher.reviews.length === 1 ? 'avaliação' : 'avaliações'}` : "Nenhuma avaliação ainda"}
         </p>
       </CardContent>
       <CardFooter className="grid grid-cols-2 gap-2 pt-4">

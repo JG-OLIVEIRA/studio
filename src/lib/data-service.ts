@@ -139,8 +139,8 @@ export async function initializeDatabase() {
             throw new Error("Não foi possível inicializar o banco de dados.");
         } finally {
             client.release();
-            if (initializationPromise) {
-                initializationPromise = null; // Clean up promise after completion/failure
+            if (!dbInitialized) {
+              initializationPromise = null; // Clean up promise only on failure
             }
         }
     })();
@@ -183,64 +183,56 @@ export async function getSubjects(): Promise<Subject[]> {
     const result = await client.query(query);
 
     const subjectsMap: Map<number, Subject> = new Map();
-    const teachersMap: Map<number, Teacher> = new Map();
-
-    // Primeiro, inicializa todas as matérias a partir do resultado da query
-    // para garantir que mesmo matérias sem professores sejam listadas.
     const allSubjects = await client.query('SELECT id, name FROM subjects ORDER BY name');
     for (const subjectRow of allSubjects.rows) {
-        if (!subjectsMap.has(subjectRow.id)) {
-            subjectsMap.set(subjectRow.id, {
-                id: subjectRow.id,
-                name: subjectRow.name,
-                iconName: assignIconName(subjectRow.name),
-                teachers: [],
-            });
-        }
+        subjectsMap.set(subjectRow.id, {
+            id: subjectRow.id,
+            name: subjectRow.name,
+            iconName: assignIconName(subjectRow.name),
+            teachers: [],
+        });
     }
+
+    const teachersMap = new Map<string, Teacher>();
 
     for (const row of result.rows) {
-        if (row.teacher_id && !teachersMap.has(row.teacher_id)) {
-            teachersMap.set(row.teacher_id, {
+        if (!row.teacher_id) continue;
+
+        const teacherKey = `${row.teacher_id}-${row.subject_id}`;
+
+        if (!teachersMap.has(teacherKey)) {
+            teachersMap.set(teacherKey, {
                 id: row.teacher_id,
                 name: row.teacher_name,
+                subject: row.subject_name,
                 reviews: [],
-                subject: row.subject_name, // Associa a matéria ao professor
-                averageRating: 0 // Será calculado depois
+                averageRating: 0,
             });
         }
 
-        if (row.review_id) {
-            const teacher = teachersMap.get(row.teacher_id);
-            if (teacher) {
-                const review: Review = {
-                    id: row.review_id,
-                    text: row.review_text,
-                    rating: row.review_rating,
-                    upvotes: row.review_upvotes,
-                    downvotes: row.review_downvotes,
-                    createdAt: (row.review_created_at || new Date()).toISOString(),
-                };
-                // Evita duplicar a mesma avaliação se a query retornar múltiplas linhas por algum motivo
-                if (!teacher.reviews.some(r => r.id === review.id)) {
-                    teacher.reviews.push(review);
-                }
-            }
+        const teacher = teachersMap.get(teacherKey)!;
+
+        if (row.review_id && !teacher.reviews.some(r => r.id === row.review_id)) {
+            teacher.reviews.push({
+                id: row.review_id,
+                text: row.review_text,
+                rating: row.review_rating,
+                upvotes: row.review_upvotes,
+                downvotes: row.review_downvotes,
+                createdAt: (row.review_created_at || new Date()).toISOString(),
+            });
         }
     }
-    
-    // Calcula a média e associa os professores às matérias
-    teachersMap.forEach(teacher => {
-        teacher.averageRating = calculateAverageRating(teacher.reviews);
-        const subject = Array.from(subjectsMap.values()).find(s => s.name === teacher.subject);
+
+    teachersMap.forEach((teacher, key) => {
+        const subjectId = parseInt(key.split('-')[1]);
+        const subject = subjectsMap.get(subjectId);
         if (subject) {
-             // Garante que o professor não seja adicionado múltiplas vezes à mesma matéria
-            if (!subject.teachers.some(t => t.id === teacher.id)) {
-                subject.teachers.push(teacher);
-            }
+            teacher.averageRating = calculateAverageRating(teacher.reviews);
+            subject.teachers.push(teacher);
         }
     });
-    
+
     return Array.from(subjectsMap.values());
 
   } catch (error) {

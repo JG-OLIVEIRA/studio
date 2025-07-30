@@ -50,7 +50,7 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
                 {sortedTeachers.map((teacher) => (
                     <TeacherCard
                       key={teacher.id}
-                      teacher={{...teacher, subject: subject.name}}
+                      teacher={teacher} // teacher já vem com a matéria do data-service
                       isTopTeacher={teacher.id === topTeacher?.id}
                     />
                 ))}
