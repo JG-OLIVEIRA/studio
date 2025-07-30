@@ -16,20 +16,22 @@ interface TeacherCardProps {
 }
 
 export default function TeacherCard({ teacher: initialTeacher }: TeacherCardProps) {
+  // The teacher state is now managed locally in the card for simplicity,
+  // but a real app would likely lift this state up or use a global state manager.
   const [teacher, setTeacher] = useState(initialTeacher);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
 
-  const averageRating = useMemo(() => {
-    if (teacher.reviews.length === 0) return 0;
-    const total = teacher.reviews.reduce((acc, review) => acc + review.rating, 0);
-    return total / teacher.reviews.length;
-  }, [teacher.reviews]);
-
+  // This will not persist across reloads as state is not lifted to the page component
+  // which now also loses its state on reload. This is a limitation of not using a DB.
   const handleAddReview = (data: { author: string; text: string; rating: number }) => {
     const newReview: Review = {
       id: Date.now(), // simple unique id
       ...data,
     };
+    
+    // NOTE: This state update is local to the TeacherCard.
+    // It will NOT update the parent `subjectsData` state in `page.tsx`.
+    // For a real application, this state logic should be lifted up.
     setTeacher(prev => ({
         ...prev,
         reviews: [...prev.reviews, newReview]
@@ -37,6 +39,12 @@ export default function TeacherCard({ teacher: initialTeacher }: TeacherCardProp
     setIsReviewOpen(false);
   }
 
+  const averageRating = useMemo(() => {
+    if (teacher.reviews.length === 0) return 0;
+    const total = teacher.reviews.reduce((acc, review) => acc + review.rating, 0);
+    return total / teacher.reviews.length;
+  }, [teacher.reviews]);
+  
   const hasReviews = teacher.reviews.length > 0;
 
   return (
