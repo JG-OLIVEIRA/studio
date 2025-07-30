@@ -29,94 +29,107 @@ function assignIconName(subjectName: string): string {
     return 'GraduationCap';
 }
 
-// Variável para garantir que a inicialização ocorra apenas uma vez.
+// Variáveis para garantir que a inicialização ocorra apenas uma vez, de forma segura.
+let initializationPromise: Promise<void> | null = null;
 let dbInitialized = false;
 
 /**
  * Garante que as tabelas necessárias existam e sincroniza as matérias.
- * Esta função é chamada apenas uma vez para evitar deadlocks.
+ * Esta função agora é segura contra condições de corrida.
  */
 async function initializeDatabase() {
-    if (dbInitialized) return;
-
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-
-        // Criação de tabelas
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS subjects (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) UNIQUE NOT NULL
-            );
-        `);
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS teachers (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                subject_id INTEGER NOT NULL,
-                UNIQUE(name, subject_id)
-            );
-        `);
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS reviews (
-                id SERIAL PRIMARY KEY,
-                text TEXT NOT NULL,
-                rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-                teacher_id INTEGER NOT NULL,
-                upvotes INTEGER NOT NULL DEFAULT 0,
-                downvotes INTEGER NOT NULL DEFAULT 0,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-            );
-        `);
-
-        // Garante as constraints de ON DELETE CASCADE
-        await client.query(`
-            ALTER TABLE teachers 
-            DROP CONSTRAINT IF EXISTS teachers_subject_id_fkey,
-            ADD CONSTRAINT teachers_subject_id_fkey 
-            FOREIGN KEY (subject_id) 
-            REFERENCES subjects(id) 
-            ON DELETE CASCADE;
-        `);
-        await client.query(`
-            ALTER TABLE reviews 
-            DROP CONSTRAINT IF EXISTS reviews_teacher_id_fkey,
-            ADD CONSTRAINT reviews_teacher_id_fkey 
-            FOREIGN KEY (teacher_id) 
-            REFERENCES teachers(id) 
-            ON DELETE CASCADE;
-        `);
-
-        console.log("Verificação de tabelas concluída e constraints corretas.");
-
-        // Sincronização de matérias
-        const dbSubjectsResult = await client.query('SELECT id, name FROM subjects');
-        const dbSubjectNames = dbSubjectsResult.rows.map(s => s.name);
-
-        const subjectsToAdd = curriculumSubjects.filter(cs => !dbSubjectNames.includes(cs));
-        if (subjectsToAdd.length > 0) {
-            const insertQuery = 'INSERT INTO subjects (name) VALUES ' + subjectsToAdd.map((_, i) => `($${i + 1})`).join(', ');
-            await client.query(insertQuery, subjectsToAdd);
-            console.log(`Adicionadas ${subjectsToAdd.length} novas matérias ao DB.`);
-        }
-
-        const subjectsToRemove = dbSubjectsResult.rows.filter(ds => !curriculumSubjects.includes(ds.name));
-        if (subjectsToRemove.length > 0) {
-            const idsToRemove = subjectsToRemove.map(s => s.id);
-            await client.query('DELETE FROM subjects WHERE id = ANY($1::int[])', [idsToRemove]);
-            console.log(`Removidas ${subjectsToRemove.length} matérias obsoletas do DB.`);
-        }
-        
-        await client.query('COMMIT');
-        dbInitialized = true; // Marca como inicializado
-    } catch (error) {
-        await client.query('ROLLBACK');
-        console.error("Erro ao inicializar o banco de dados:", error);
-        throw new Error("Não foi possível inicializar o banco de dados.");
-    } finally {
-        client.release();
+    if (dbInitialized) {
+        return;
     }
+
+    if (initializationPromise) {
+        return initializationPromise;
+    }
+
+    initializationPromise = (async () => {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            // Criação de tabelas
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS subjects (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) UNIQUE NOT NULL
+                );
+            `);
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS teachers (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    subject_id INTEGER NOT NULL,
+                    UNIQUE(name, subject_id)
+                );
+            `);
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS reviews (
+                    id SERIAL PRIMARY KEY,
+                    text TEXT NOT NULL,
+                    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                    teacher_id INTEGER NOT NULL,
+                    upvotes INTEGER NOT NULL DEFAULT 0,
+                    downvotes INTEGER NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+                );
+            `);
+
+            // Garante as constraints de ON DELETE CASCADE
+            await client.query(`
+                ALTER TABLE teachers 
+                DROP CONSTRAINT IF EXISTS teachers_subject_id_fkey,
+                ADD CONSTRAINT teachers_subject_id_fkey 
+                FOREIGN KEY (subject_id) 
+                REFERENCES subjects(id) 
+                ON DELETE CASCADE;
+            `);
+            await client.query(`
+                ALTER TABLE reviews 
+                DROP CONSTRAINT IF EXISTS reviews_teacher_id_fkey,
+                ADD CONSTRAINT reviews_teacher_id_fkey 
+                FOREIGN KEY (teacher_id) 
+                REFERENCES teachers(id) 
+                ON DELETE CASCADE;
+            `);
+
+            console.log("Verificação de tabelas concluída e constraints corretas.");
+
+            // Sincronização de matérias
+            const dbSubjectsResult = await client.query('SELECT id, name FROM subjects');
+            const dbSubjectNames = dbSubjectsResult.rows.map(s => s.name);
+
+            const subjectsToAdd = curriculumSubjects.filter(cs => !dbSubjectNames.includes(cs));
+            if (subjectsToAdd.length > 0) {
+                const insertQuery = 'INSERT INTO subjects (name) VALUES ' + subjectsToAdd.map((_, i) => `($${i + 1})`).join(', ');
+                await client.query(insertQuery, subjectsToAdd);
+                console.log(`Adicionadas ${subjectsToAdd.length} novas matérias ao DB.`);
+            }
+
+            const subjectsToRemove = dbSubjectsResult.rows.filter(ds => !curriculumSubjects.includes(ds.name));
+            if (subjectsToRemove.length > 0) {
+                const idsToRemove = subjectsToRemove.map(s => s.id);
+                await client.query('DELETE FROM subjects WHERE id = ANY($1::int[])', [idsToRemove]);
+                console.log(`Removidas ${subjectsToRemove.length} matérias obsoletas do DB.`);
+            }
+            
+            await client.query('COMMIT');
+            dbInitialized = true;
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error("Erro ao inicializar o banco de dados:", error);
+            // Reseta a promessa para permitir uma nova tentativa
+            initializationPromise = null; 
+            throw new Error("Não foi possível inicializar o banco de dados.");
+        } finally {
+            client.release();
+        }
+    })();
+
+    return initializationPromise;
 }
 
 
@@ -129,42 +142,73 @@ export async function getSubjects(): Promise<Subject[]> {
   console.log("Buscando dados do banco de dados PostgreSQL...");
   const client = await pool.connect();
   try {
-    const subjectsResult = await client.query('SELECT id, name FROM subjects ORDER BY name');
-    
-    const subjects: Subject[] = [];
+    const query = `
+      SELECT
+        s.id as subject_id,
+        s.name as subject_name,
+        t.id as teacher_id,
+        t.name as teacher_name,
+        r.id as review_id,
+        r.text as review_text,
+        r.rating as review_rating,
+        r.upvotes as review_upvotes,
+        r.downvotes as review_downvotes,
+        r.created_at as review_created_at
+      FROM
+        subjects s
+      LEFT JOIN
+        teachers t ON s.id = t.subject_id
+      LEFT JOIN
+        reviews r ON t.id = r.teacher_id
+      ORDER BY
+        s.name, t.name;
+    `;
 
-    for (const subjectRow of subjectsResult.rows) {
-        const teachersResult = await client.query('SELECT id, name FROM teachers WHERE subject_id = $1', [subjectRow.id]);
-        
-        const teachers: Teacher[] = [];
-        for (const teacherRow of teachersResult.rows) {
-            const reviewsResult = await client.query('SELECT * FROM reviews WHERE teacher_id = $1', [teacherRow.id]);
-            const reviews: Review[] = reviewsResult.rows.map(review => ({
-                id: review.id,
-                rating: review.rating,
-                text: review.text,
-                upvotes: review.upvotes,
-                downvotes: review.downvotes,
-                createdAt: (review.created_at || new Date()).toISOString(),
-            }));
-            
-            teachers.push({
-                id: teacherRow.id,
-                name: teacherRow.name,
-                subject: subjectRow.name,
-                reviews: reviews,
-            });
+    const result = await client.query(query);
+
+    const subjectsMap: Map<number, Subject> = new Map();
+
+    for (const row of result.rows) {
+      // Get or create Subject
+      let subject = subjectsMap.get(row.subject_id);
+      if (!subject) {
+        subject = {
+          id: row.subject_id,
+          name: row.subject_name,
+          iconName: assignIconName(row.subject_name),
+          teachers: [],
+        };
+        subjectsMap.set(row.subject_id, subject);
+      }
+
+      if (row.teacher_id) {
+        // Get or create Teacher
+        let teacher = subject.teachers.find(t => t.id === row.teacher_id);
+        if (!teacher) {
+          teacher = {
+            id: row.teacher_id,
+            name: row.teacher_name,
+            subject: subject.name,
+            reviews: [],
+          };
+          subject.teachers.push(teacher);
         }
-        
-        subjects.push({
-            id: subjectRow.id,
-            name: subjectRow.name,
-            iconName: assignIconName(subjectRow.name),
-            teachers: teachers,
-        });
-    }
 
-    return subjects;
+        if (row.review_id) {
+          // Add review
+          teacher.reviews.push({
+            id: row.review_id,
+            text: row.review_text,
+            rating: row.review_rating,
+            upvotes: row.review_upvotes,
+            downvotes: row.review_downvotes,
+            createdAt: (row.review_created_at || new Date()).toISOString(),
+          });
+        }
+      }
+    }
+    
+    return Array.from(subjectsMap.values());
 
   } catch (error) {
     console.error("Erro ao buscar dados do PostgreSQL:", error);
