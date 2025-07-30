@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster"
 export const metadata: Metadata = {
   title: 'TeacherRate',
   description: 'Encontre e avalie os melhores professores.',
+  icons: null,
 };
 
 export default function RootLayout({
