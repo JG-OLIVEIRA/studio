@@ -16,9 +16,65 @@ const iconNameMap: Record<string, string> = {
     'Arte': 'Palette',
 };
 
+const curriculumSubjects = [
+    "Geometria Analítica", "Cálculo I", "Álgebra", "Matemática Discreta", "Fundamentos da Computação",
+    "Álgebra Linear", "Cálculo II", "Cálculo das Probabilidades", "Algoritmos e Est. de Dados I", "Linguagem de Programação I", "Física I",
+    "Português Instrumental", "Cálculo III", "Algoritmos e Est. de Dados II", "Elementos de Lógica", "Linguagem de Programação II", "Teoria da Computação",
+    "Cálculo Numérico", "Cálculo IV", "Algoritmos em Grafos", "Engenharia de Software", "Arquitetura de Computadores I", "Física II",
+    "Estruturas de Linguagens", "Banco de Dados I", "Otimização em Grafos", "Análise e Proj. de Sistemas", "Sistemas Operacionais I", "Arquitetura de Computadores II", "Eletiva Básica",
+    "Otimização Combinatória", "Banco de Dados II", "Interfaces Humano-Comp.", "Eletiva I", "Sistemas Operacionais II", "Compiladores",
+    "Computação Gráfica", "Inteligência Artificial", "Ética Comp. e Sociedade", "Metod. Cient. no Projeto Final", "Redes de Computadores I", "Arq. Avançadas de Computadores",
+    "Eletiva II", "Eletiva III", "Projeto Final", "Sistemas Distribuídos", "Eletiva IV"
+];
+
 function assignIconName(subjectName: string): string {
-    return iconNameMap[subjectName] || 'GraduationCap';
+    const name = subjectName.toLowerCase();
+    if (name.includes('cálculo') || name.includes('matemática') || name.includes('geometria') || name.includes('álgebra')) return 'Sigma';
+    if (name.includes('física')) return 'Atom';
+    if (name.includes('computação') || name.includes('algoritmos') || name.includes('programação') || name.includes('sistemas') || name.includes('software') || name.includes('arquitetura') || name.includes('redes') || name.includes('dados') || name.includes('inteligência artificial')) return 'Laptop';
+    if (name.includes('lógica')) return 'BrainCircuit';
+    if (name.includes('grafos')) return 'GitGraph';
+    return 'GraduationCap';
 }
+
+/**
+ * Sincroniza o banco de dados com a grade curricular fixa.
+ * Adiciona matérias faltantes e remove as que não pertencem à grade.
+ */
+async function syncSubjectsWithCurriculum() {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        const dbSubjectsResult = await client.query('SELECT id, name FROM subjects');
+        const dbSubjectNames = dbSubjectsResult.rows.map(s => s.name);
+
+        // Adicionar matérias faltantes
+        const subjectsToAdd = curriculumSubjects.filter(cs => !dbSubjectNames.includes(cs));
+        if (subjectsToAdd.length > 0) {
+            const insertQuery = 'INSERT INTO subjects (name) VALUES ' + subjectsToAdd.map((_, i) => `($${i + 1})`).join(', ');
+            await client.query(insertQuery, subjectsToAdd);
+            console.log(`Adicionadas ${subjectsToAdd.length} novas matérias ao DB.`);
+        }
+
+        // Remover matérias que não estão na grade
+        const subjectsToRemove = dbSubjectsResult.rows.filter(ds => !curriculumSubjects.includes(ds.name));
+        if (subjectsToRemove.length > 0) {
+            const idsToRemove = subjectsToRemove.map(s => s.id);
+            // ON DELETE CASCADE irá remover professores e avaliações associados
+            await client.query('DELETE FROM subjects WHERE id = ANY($1::int[])', [idsToRemove]);
+            console.log(`Removidas ${subjectsToRemove.length} matérias obsoletas do DB.`);
+        }
+
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error("Erro ao sincronizar matérias com a grade curricular:", error);
+    } finally {
+        client.release();
+    }
+}
+
 
 /**
  * Garante que as tabelas necessárias existam no banco de dados.
@@ -52,31 +108,6 @@ async function ensureDbTablesExist() {
       );
     `);
     
-    // Add columns if they don't exist
-    const reviewColumns = await client.query(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name='reviews' AND column_name IN ('upvotes', 'downvotes');
-    `);
-    const existingCols = reviewColumns.rows.map(r => r.column_name);
-    if (!existingCols.includes('upvotes')) {
-      await client.query('ALTER TABLE reviews ADD COLUMN upvotes INTEGER NOT NULL DEFAULT 0;');
-    }
-    if (!existingCols.includes('downvotes')) {
-      await client.query('ALTER TABLE reviews ADD COLUMN downvotes INTEGER NOT NULL DEFAULT 0;');
-    }
-
-
-    // Check if 'author' column exists and drop it if it does
-    const authorColumnCheck = await client.query(`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name='reviews' AND column_name='author';
-    `);
-    if(authorColumnCheck.rowCount > 0) {
-        await client.query('ALTER TABLE reviews DROP COLUMN author;');
-    }
-    
     console.log("Verificação de tabelas concluída. As tabelas necessárias existem.");
   } catch (error) {
     console.error("Erro ao criar ou verificar as tabelas do banco de dados:", error);
@@ -90,8 +121,8 @@ async function ensureDbTablesExist() {
  * Busca todas as matérias, seus professores e avaliações do banco de dados.
  */
 export async function getSubjects(): Promise<Subject[]> {
-  // Garante que as tabelas existem antes de tentar buscar os dados
   await ensureDbTablesExist();
+  await syncSubjectsWithCurriculum();
   
   console.log("Buscando dados do banco de dados PostgreSQL...");
   const client = await pool.connect();
@@ -139,7 +170,6 @@ export async function getSubjects(): Promise<Subject[]> {
 
   } catch (error) {
     console.error("Erro ao buscar dados do PostgreSQL:", error);
-    // Em caso de erro, retorna uma estrutura de dados vazia para não quebrar a UI
     return [];
   } finally {
     client.release();
@@ -155,7 +185,6 @@ export async function addTeacherOrReview(data: {
   reviewText: string;
   reviewRating: number;
 }): Promise<void> {
-    // Garante que as tabelas existem antes de tentar adicionar dados
     await ensureDbTablesExist();
     
     console.log("Adicionando professor/avaliação no banco de dados PostgreSQL...", data);
@@ -163,20 +192,18 @@ export async function addTeacherOrReview(data: {
     try {
         await client.query('BEGIN');
 
-        // 1. Encontra ou cria a matéria
+        // 1. Encontra a matéria (não cria mais)
         let subjectResult = await client.query('SELECT id FROM subjects WHERE name = $1', [data.subjectName]);
-        let subjectId;
         if (subjectResult.rowCount === 0) {
-            const newSubjectResult = await client.query('INSERT INTO subjects (name) VALUES ($1) RETURNING id', [data.subjectName]);
-            subjectId = newSubjectResult.rows[0].id;
-        } else {
-            subjectId = subjectResult.rows[0].id;
+            throw new Error(`Matéria "${data.subjectName}" não encontrada. A criação de novas matérias não é permitida.`);
         }
+        const subjectId = subjectResult.rows[0].id;
 
         // 2. Encontra ou cria o professor
         let teacherResult = await client.query('SELECT id FROM teachers WHERE name = $1 AND subject_id = $2', [data.teacherName, subjectId]);
         let teacherId;
         if (teacherResult.rowCount === 0) {
+            // A criação de professores ainda é permitida dentro de matérias existentes
             const newTeacherResult = await client.query('INSERT INTO teachers (name, subject_id) VALUES ($1, $2) RETURNING id', [data.teacherName, subjectId]);
             teacherId = newTeacherResult.rows[0].id;
         } else {
@@ -221,6 +248,10 @@ export async function deleteReview(reviewId: number): Promise<void> {
  */
 export async function updateSubjectName(subjectId: number, newName: string): Promise<void> {
     console.log(`Atualizando matéria com ID ${subjectId} para o novo nome: ${newName}`);
+    if (!curriculumSubjects.includes(newName)) {
+        throw new Error("O novo nome da matéria não é válido na grade curricular.");
+    }
+
     const client = await pool.connect();
     try {
         await client.query('UPDATE subjects SET name = $1 WHERE id = $2', [newName, subjectId]);

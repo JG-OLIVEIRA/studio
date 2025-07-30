@@ -34,7 +34,7 @@ const getSemesterForSubject = (subjectName: string): number | null => {
             return semesterData.semester;
         }
     }
-    return null; // Or a default semester like 9 for electives not in the main flow
+    return 99; // Or a default semester like 99 for electives/uncategorized
 };
 
 export default function TeacherRateClient({ initialSubjectsData }: TeacherRateClientProps) {
@@ -43,7 +43,7 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
 
   const allTeachers = initialSubjectsData.flatMap(s => s.teachers.map(t => ({ ...t, subject: s.name })));
-  const allSubjectNames = initialSubjectsData.map(s => s.name);
+  const allSubjectNames = useMemo(() => initialSubjectsData.map(s => s.name).sort((a,b) => a.localeCompare(b)), [initialSubjectsData]);
 
   const onAddTeacherOrReview = async (data: {
     teacherName: string;
@@ -149,7 +149,7 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
         >
             <Button size="lg" onClick={() => setIsDialogOpen(true)} className="w-full">
                 <PlusCircle className="mr-2 h-5 w-5" />
-                Adicionar Professor ou Avaliação
+                Adicionar Avaliação
             </Button>
         </AddTeacherOrReviewDialog>
       </div>
@@ -165,7 +165,7 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
                 ) : (
                     <>
                         <p className="font-semibold text-lg">Nenhuma matéria cadastrada ainda.</p>
-                        <p className="mt-2 text-sm">Seja o primeiro a adicionar um professor e uma matéria!</p>
+                        <p className="mt-2 text-sm">Aguarde, as matérias estão sendo carregadas...</p>
                     </>
                 )}
             </div>

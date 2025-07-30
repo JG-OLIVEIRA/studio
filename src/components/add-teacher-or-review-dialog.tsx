@@ -25,15 +25,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Teacher } from '@/lib/types';
-import { Combobox } from './ui/combobox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 const formSchema = z.object({
   teacherName: z.string().trim()
-    .min(4, "O nome do professor deve ter pelo menos 4 caracteres.")
-    .max(100, "O nome do professor deve ter no máximo 100 caracteres."),
+    .min(1, "É necessário selecionar um professor."),
   subjectName: z.string().trim()
-    .min(4, "A matéria deve ter pelo menos 4 caracteres.")
-    .max(100, "A matéria deve ter no máximo 100 caracteres."),
+    .min(1, "É necessário selecionar uma matéria."),
   reviewText: z.string().trim()
     .min(25, "A avaliação deve ter pelo menos 25 caracteres.")
     .max(1000, "A avaliação deve ter no máximo 1000 caracteres."),
@@ -98,16 +96,21 @@ export function AddTeacherOrReviewDialog({
     form.reset();
   }
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+        form.reset();
+    }
+    onOpenChange(isOpen);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
         {children}
         <DialogContent>
             <DialogHeader>
-            <DialogTitle>{teacherExists ? `Adicionar avaliação para ${teacherName}` : `Adicionar novo professor`}</DialogTitle>
+            <DialogTitle>Adicionar nova avaliação</DialogTitle>
             <DialogDescription>
-                {teacherExists 
-                    ? `Este professor já está em nosso banco de dados para esta matéria. Por favor, adicione sua avaliação abaixo.`
-                    : `Este professor ainda não está em nosso banco de dados. Adicione os detalhes e sua primeira avaliação!`}
+                Selecione a matéria e o professor para adicionar sua avaliação. Não é mais possível adicionar novos professores ou matérias.
             </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -119,16 +122,21 @@ export function AddTeacherOrReviewDialog({
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel>Matéria</FormLabel>
-                             <Combobox
-                                options={subjectOptions}
-                                value={field.value}
-                                onChange={(value) => {
-                                    field.onChange(value);
-                                    form.setValue('teacherName', ''); // Reset teacher when subject changes
-                                }}
-                                placeholder="Selecione ou crie..."
-                                createLabel="Criar matéria:"
-                            />
+                             <Select onValueChange={(value) => {
+                                 field.onChange(value);
+                                 form.setValue('teacherName', '');
+                             }} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione a matéria" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {subjectOptions.map(option => (
+                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                             </Select>
                             <FormMessage />
                         </FormItem>
                         )}
@@ -139,14 +147,18 @@ export function AddTeacherOrReviewDialog({
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>Nome do Professor</FormLabel>
-                             <Combobox
-                                options={teacherOptions}
-                                value={field.value}
-                                onChange={field.onChange}
-                                placeholder={subjectName ? "Selecione ou crie..." : "Escolha uma matéria"}
-                                createLabel="Criar professor:"
-                                disabled={!subjectName}
-                            />
+                             <Select onValueChange={field.onChange} value={field.value} disabled={!subjectName}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={subjectName ? "Selecione o professor" : "Escolha uma matéria"} />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {teacherOptions.map(option => (
+                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                             </Select>
                             <FormMessage />
                             </FormItem>
                         )}
