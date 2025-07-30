@@ -21,11 +21,53 @@ function assignIcon(subjectName: string) {
     return iconMap[subjectName as keyof typeof iconMap] || GraduationCap;
 }
 
+/**
+ * Garante que as tabelas necessárias existam no banco de dados.
+ * Cria as tabelas se elas ainda não tiverem sido criadas.
+ */
+async function ensureDbTablesExist() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS subjects (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS teachers (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        subject_id INTEGER NOT NULL REFERENCES subjects(id),
+        UNIQUE(name, subject_id)
+      );
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reviews (
+        id SERIAL PRIMARY KEY,
+        author VARCHAR(255) NOT NULL,
+        text TEXT NOT NULL,
+        rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+        teacher_id INTEGER NOT NULL REFERENCES teachers(id)
+      );
+    `);
+    console.log("Verificação de tabelas concluída. As tabelas necessárias existem.");
+  } catch (error) {
+    console.error("Erro ao criar ou verificar as tabelas do banco de dados:", error);
+    throw new Error("Não foi possível inicializar o banco de dados.");
+  } finally {
+    client.release();
+  }
+}
+
 
 /**
  * Busca todas as matérias, seus professores e avaliações do banco de dados.
  */
 export async function getSubjects(): Promise<Subject[]> {
+  // Garante que as tabelas existem antes de tentar buscar os dados
+  await ensureDbTablesExist();
+
   console.log("Buscando dados do banco de dados PostgreSQL...");
   const client = await pool.connect();
   try {
@@ -86,6 +128,9 @@ export async function addTeacherOrReview(data: {
   reviewText: string;
   reviewRating: number;
 }): Promise<void> {
+    // Garante que as tabelas existem antes de tentar adicionar dados
+    await ensureDbTablesExist();
+    
     console.log("Adicionando professor/avaliação no banco de dados PostgreSQL...", data);
     const client = await pool.connect();
     try {
