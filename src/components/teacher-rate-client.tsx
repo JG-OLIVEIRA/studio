@@ -49,60 +49,54 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
     const subject = initialSubjectsData.find(s => s.name.toLowerCase() === subjectName.toLowerCase());
     if (subject) {
       const subjectId = `subject-${subject.id}`;
-      setOpenAccordionItems(prev => [...prev, subjectId]);
+      // Use a callback with setOpenAccordionItems to ensure we have the latest state
+      setOpenAccordionItems(prev => {
+          if (prev.includes(subjectId)) {
+              return prev; // Already open
+          }
+          return [...prev, subjectId]; // Add to open items
+      });
+
+      // Scroll after a short delay to allow the accordion to open
       setTimeout(() => {
         const element = document.getElementById(`subject-title-${subject.id}`);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-      }, 100); 
+      }, 300); // 300ms delay to match accordion animation
     }
   };
 
-  const filteredSemesters = useMemo(() => {
+  const filteredSubjects = useMemo(() => {
+    if (!searchQuery) {
+      return initialSubjectsData;
+    }
     const lowercasedQuery = searchQuery.toLowerCase();
     
-    return flowchartData.map(semester => {
-        const subjectsInSemester = initialSubjectsData.filter(dbSub => 
-            semester.subjects.some(flowSub => flowSub.toLowerCase() === dbSub.name.toLowerCase())
-        );
-
-        let filteredSubjectsInSemester = subjectsInSemester;
-
-        if (searchQuery) {
-            filteredSubjectsInSemester = subjectsInSemester.map(subject => {
-                if (subject.name.toLowerCase().includes(lowercasedQuery)) {
-                    return subject;
-                }
-                const matchingTeachers = subject.teachers.filter(teacher =>
-                    teacher.name.toLowerCase().includes(lowercasedQuery)
-                );
-                if (matchingTeachers.length > 0) {
-                    return { ...subject, teachers: matchingTeachers };
-                }
-                return null;
-            }).filter((s): s is Subject => s !== null);
+    return initialSubjectsData.map(subject => {
+        if (subject.name.toLowerCase().includes(lowercasedQuery)) {
+            return subject;
         }
-        
-        return {
-            ...semester,
-            subjects: filteredSubjectsInSemester,
-        };
-    }).filter(semester => semester.subjects.length > 0);
+        const matchingTeachers = subject.teachers.filter(teacher =>
+            teacher.name.toLowerCase().includes(lowercasedQuery)
+        );
+        if (matchingTeachers.length > 0) {
+            return { ...subject, teachers: matchingTeachers };
+        }
+        return null;
+    }).filter((s): s is Subject => s !== null);
+
   }, [initialSubjectsData, searchQuery]);
 
-  const subjectsWithoutSemester = useMemo(() => {
-     if (searchQuery) return [];
-     const allSemesterSubjects = new Set(flowchartData.flatMap(s => s.subjects.map(sub => sub.toLowerCase())));
-     return initialSubjectsData.filter(s => !allSemesterSubjects.has(s.name.toLowerCase()));
-  }, [initialSubjectsData, searchQuery]);
   
   const defaultAccordionValues = useMemo(() => {
     if (searchQuery) {
-      return filteredSemesters.flatMap(s => s.subjects.map(sub => `subject-${sub.id}`));
+      return filteredSubjects.map(sub => `subject-${sub.id}`);
     }
     return [];
-  }, [searchQuery, filteredSemesters]);
+  }, [searchQuery, filteredSubjects]);
+
+  const accordionValue = searchQuery ? defaultAccordionValues : openAccordionItems;
 
   return (
     <>
@@ -134,22 +128,15 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
         </AddTeacherOrReviewDialog>
       </div>
 
-      <div className="space-y-12">
-        {filteredSemesters.length > 0 ? (
-          filteredSemesters.map((semester) => (
-            <div key={semester.semester}>
-              <h2 className="text-2xl font-bold mb-4 border-b pb-2">{semester.semester}º Período</h2>
-              <Accordion 
-                type="multiple" 
-                value={openAccordionItems.length > 0 ? openAccordionItems : defaultAccordionValues}
-                onValueChange={setOpenAccordionItems}
-                className="space-y-2"
-              >
-                {semester.subjects.map((subject) => (
-                  <SubjectSection key={subject.id} subject={subject} />
-                ))}
-              </Accordion>
-            </div>
+      <Accordion 
+        type="multiple" 
+        value={accordionValue}
+        onValueChange={setOpenAccordionItems}
+        className="space-y-2"
+      >
+        {filteredSubjects.length > 0 ? (
+          filteredSubjects.map((subject) => (
+            <SubjectSection key={subject.id} subject={subject} />
           ))
         ) : (
             <div className="text-center text-muted-foreground py-12">
@@ -166,18 +153,7 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
                 )}
             </div>
         )}
-        
-        {subjectsWithoutSemester.length > 0 && (
-            <div>
-              <h2 className="text-2xl font-bold mb-6 border-b pb-2">Outras Disciplinas</h2>
-              <Accordion type="multiple" className="space-y-2">
-                {subjectsWithoutSemester.map((subject) => (
-                  <SubjectSection key={subject.id} subject={subject} />
-                ))}
-              </Accordion>
-            </div>
-        )}
-      </div>
+      </Accordion>
     </>
   );
 }

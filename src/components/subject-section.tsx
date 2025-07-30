@@ -43,11 +43,11 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
   const Icon = getIconComponent(subject.iconName);
 
   return (
-    <AccordionItem value={`subject-${subject.id}`}>
+    <AccordionItem value={`subject-${subject.id}`} className="bg-card border rounded-lg shadow-sm">
         <div className="flex items-center w-full group">
-            <AccordionTrigger className="hover:no-underline flex-grow">
+            <AccordionTrigger className="hover:no-underline flex-grow rounded-l-lg p-4">
                 <div id={`subject-title-${subject.id}`} className="flex items-center gap-4 w-full">
-                    <Icon className="h-6 w-6 text-primary" />
+                    <Icon className="h-8 w-8 text-primary" />
                     <h3 className="text-xl font-semibold text-foreground text-left flex-1">
                     {subject.name}
                     </h3>
@@ -57,7 +57,7 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
             <EditSubjectDialog subject={subject}>
                 <button 
                     onClick={(e) => e.stopPropagation()} 
-                    className="p-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors mr-2 ml-2"
+                    className="p-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors mr-4 ml-2"
                     aria-label={`Editar matéria ${subject.name}`}
                 >
                     <Pencil className="h-4 w-4" />
@@ -65,7 +65,7 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
             </EditSubjectDialog>
         </div>
       <AccordionContent>
-        <div className="pl-10 pr-1 pt-4">
+        <div className="px-4 pb-4">
             {sortedTeachers.length > 0 ? (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {sortedTeachers.map((teacher) => (
@@ -77,7 +77,7 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
                 ))}
                 </div>
             ) : (
-                <p className="text-muted-foreground text-center py-4 border rounded-lg bg-card">Nenhum professor cadastrado nesta matéria ainda.</p>
+                <p className="text-muted-foreground text-center py-4 border rounded-lg bg-background">Nenhum professor cadastrado nesta matéria ainda.</p>
             )}
         </div>
       </AccordionContent>

@@ -19,7 +19,7 @@ export default function FeaturedTeacher({ teacher }: FeaturedTeacherProps) {
   }, [teacher.reviews]);
 
   return (
-    <div className="hidden md:flex items-center gap-4 mr-auto pl-4 border-l ml-4">
+    <div className="hidden md:flex items-center gap-4 mr-auto pl-4 border-l ml-4" onClick={(e) => e.stopPropagation()}>
         <Trophy className="h-6 w-6 text-amber-400 shine" />
         <div className="flex flex-col items-start">
              <span className="font-semibold text-sm text-primary shine">
