@@ -84,9 +84,11 @@ export async function initializeDatabase() {
             if (teachersTableHasSubjectId) {
                 console.log("Detectado esquema antigo. Iniciando migração de dados...");
                 
+                // Renomear tabelas antigas
                 await client.query('ALTER TABLE reviews RENAME TO reviews_old;');
                 await client.query('ALTER TABLE teachers RENAME TO teachers_old;');
 
+                // Criar novas tabelas com o esquema correto
                 await client.query(`
                     CREATE TABLE teachers (
                         id SERIAL PRIMARY KEY,
@@ -106,12 +108,14 @@ export async function initializeDatabase() {
                     );
                 `);
 
+                // Migrar professores primeiro
                 await client.query(`
                     INSERT INTO teachers (name)
                     SELECT DISTINCT name FROM teachers_old
                     ON CONFLICT (name) DO NOTHING;
                 `);
                 
+                // Agora migrar avaliações, associando com os novos IDs
                 await client.query(`
                     INSERT INTO reviews (id, text, rating, teacher_id, subject_id, upvotes, downvotes, created_at)
                     SELECT 
@@ -128,6 +132,7 @@ export async function initializeDatabase() {
                     JOIN teachers t_new ON t_old.name = t_new.name;
                 `);
 
+                // Remover tabelas antigas
                 await client.query('DROP TABLE reviews_old;');
                 await client.query('DROP TABLE teachers_old;');
 
