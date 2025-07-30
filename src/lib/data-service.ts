@@ -37,7 +37,7 @@ let dbInitialized = false;
  * Garante que as tabelas necessárias existam e sincroniza as matérias.
  * Esta função agora é segura contra condições de corrida.
  */
-async function initializeDatabase() {
+export async function initializeDatabase() {
     if (dbInitialized) {
         return;
     }
