@@ -10,6 +10,7 @@ import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dia
 import { handleAddTeacherOrReview } from '@/app/actions';
 import { Input } from '@/components/ui/input';
 import CourseFlowchart from './course-flowchart';
+import { Accordion } from '@/components/ui/accordion';
 
 const flowchartData = [
     { semester: 1, subjects: ["Geometria Analítica", "Cálculo I", "Álgebra", "Matemática Discreta", "Fundamentos da Computação"] },
@@ -29,6 +30,7 @@ interface TeacherRateClientProps {
 export default function TeacherRateClient({ initialSubjectsData }: TeacherRateClientProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
 
   const allTeachers = initialSubjectsData.flatMap(s => s.teachers.map(t => ({ ...t, subject: s.name })));
   const allSubjectNames = initialSubjectsData.map(s => s.name);
@@ -39,22 +41,21 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
     reviewText: string;
     reviewRating: number;
   }) => {
-    // We call the server action to add the data to the DB.
-    // revalidatePath('/') in the action will trigger a data refetch on the server.
     await handleAddTeacherOrReview(data);
-    
-    // After adding, just close the dialog.
     setIsDialogOpen(false);
   };
 
   const handleSubjectClick = (subjectName: string) => {
-    // Find subject ID by name
     const subject = initialSubjectsData.find(s => s.name.toLowerCase() === subjectName.toLowerCase());
     if (subject) {
-      const element = document.getElementById(`subject-title-${subject.id}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      const subjectId = `subject-${subject.id}`;
+      setOpenAccordionItems(prev => [...prev, subjectId]);
+      setTimeout(() => {
+        const element = document.getElementById(`subject-title-${subject.id}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100); 
     }
   };
 
@@ -91,10 +92,17 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
   }, [initialSubjectsData, searchQuery]);
 
   const subjectsWithoutSemester = useMemo(() => {
-     if (searchQuery) return []; // Don't show "extras" when searching
+     if (searchQuery) return [];
      const allSemesterSubjects = new Set(flowchartData.flatMap(s => s.subjects.map(sub => sub.toLowerCase())));
      return initialSubjectsData.filter(s => !allSemesterSubjects.has(s.name.toLowerCase()));
   }, [initialSubjectsData, searchQuery]);
+  
+  const defaultAccordionValues = useMemo(() => {
+    if (searchQuery) {
+      return filteredSemesters.flatMap(s => s.subjects.map(sub => `subject-${sub.id}`));
+    }
+    return [];
+  }, [searchQuery, filteredSemesters]);
 
   return (
     <>
@@ -130,12 +138,17 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
         {filteredSemesters.length > 0 ? (
           filteredSemesters.map((semester) => (
             <div key={semester.semester}>
-              <h2 className="text-2xl font-bold mb-6 border-b pb-2">{semester.semester}º Período</h2>
-              <div className="space-y-10">
+              <h2 className="text-2xl font-bold mb-4 border-b pb-2">{semester.semester}º Período</h2>
+              <Accordion 
+                type="multiple" 
+                value={openAccordionItems.length > 0 ? openAccordionItems : defaultAccordionValues}
+                onValueChange={setOpenAccordionItems}
+                className="space-y-2"
+              >
                 {semester.subjects.map((subject) => (
                   <SubjectSection key={subject.id} subject={subject} />
                 ))}
-              </div>
+              </Accordion>
             </div>
           ))
         ) : (
@@ -157,11 +170,11 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
         {subjectsWithoutSemester.length > 0 && (
             <div>
               <h2 className="text-2xl font-bold mb-6 border-b pb-2">Outras Disciplinas</h2>
-              <div className="space-y-10">
+              <Accordion type="multiple" className="space-y-2">
                 {subjectsWithoutSemester.map((subject) => (
                   <SubjectSection key={subject.id} subject={subject} />
                 ))}
-              </div>
+              </Accordion>
             </div>
         )}
       </div>

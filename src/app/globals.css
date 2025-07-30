@@ -67,3 +67,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+    .shine {
+      background: linear-gradient(
+        90deg,
+        hsl(var(--primary) / 0.6),
+        hsl(var(--primary)),
+        hsl(var(--primary) / 0.6)
+      );
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: shine-animation 4s linear infinite;
+    }
+  
+    @keyframes shine-animation {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+}
