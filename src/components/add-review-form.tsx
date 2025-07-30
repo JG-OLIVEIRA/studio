@@ -19,8 +19,12 @@ import { Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const reviewSchema = z.object({
-  author: z.string().trim().min(3, "O nome deve ter pelo menos 3 caracteres."),
-  text: z.string().trim().min(15, "A avaliação deve ter pelo menos 15 caracteres."),
+  author: z.string().trim()
+    .min(4, "O nome deve ter pelo menos 4 caracteres.")
+    .max(100, "O nome deve ter no máximo 100 caracteres."),
+  text: z.string().trim()
+    .min(25, "A avaliação deve ter pelo menos 25 caracteres.")
+    .max(1000, "A avaliação deve ter no máximo 1000 caracteres."),
   rating: z.number().min(1, "A nota é obrigatória.").max(5),
 })
 

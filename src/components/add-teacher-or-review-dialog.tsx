@@ -28,10 +28,18 @@ import type { Teacher } from '@/lib/types';
 import { Combobox } from './ui/combobox';
 
 const formSchema = z.object({
-  teacherName: z.string().trim().min(3, "O nome do professor deve ter pelo menos 3 caracteres."),
-  subjectName: z.string().trim().min(3, "A matéria deve ter pelo menos 3 caracteres."),
-  reviewAuthor: z.string().trim().min(3, "Seu nome deve ter pelo menos 3 caracteres."),
-  reviewText: z.string().trim().min(15, "A avaliação deve ter pelo menos 15 caracteres."),
+  teacherName: z.string().trim()
+    .min(4, "O nome do professor deve ter pelo menos 4 caracteres.")
+    .max(100, "O nome do professor deve ter no máximo 100 caracteres."),
+  subjectName: z.string().trim()
+    .min(4, "A matéria deve ter pelo menos 4 caracteres.")
+    .max(100, "A matéria deve ter no máximo 100 caracteres."),
+  reviewAuthor: z.string().trim()
+    .min(4, "Seu nome deve ter pelo menos 4 caracteres.")
+    .max(100, "Seu nome deve ter no máximo 100 caracteres."),
+  reviewText: z.string().trim()
+    .min(25, "A avaliação deve ter pelo menos 25 caracteres.")
+    .max(1000, "A avaliação deve ter no máximo 1000 caracteres."),
   reviewRating: z.number().min(1, "A nota é obrigatória.").max(5),
 });
 
