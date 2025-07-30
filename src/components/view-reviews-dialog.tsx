@@ -28,9 +28,6 @@ import {
 import { deleteReview, upvoteReview, downvoteReview } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useTransition } from 'react';
-import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
   
 interface ViewReviewsDialogProps {
     teacher: Teacher;
@@ -84,6 +81,22 @@ export function ViewReviewsDialog({ teacher, children, disabled }: ViewReviewsDi
 
     const sortedReviews = [...teacher.reviews].sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
 
+    const formatDate = (dateString: string) => {
+        try {
+            const date = new Date(dateString);
+            // Verifica se a data é válida
+            if (isNaN(date.getTime())) {
+                return "Data inválida";
+            }
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        } catch (e) {
+            return "Data inválida";
+        }
+    }
+
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -104,7 +117,7 @@ export function ViewReviewsDialog({ teacher, children, disabled }: ViewReviewsDi
                                     <div className="flex items-center gap-2">
                                         <StarRating rating={review.rating} />
                                         <span className="text-xs text-muted-foreground">
-                                            {formatDistanceToNow(new Date(review.createdAt), { addSuffix: true, locale: ptBR })}
+                                            {formatDate(review.createdAt)}
                                         </span>
                                     </div>
                                     <AlertDialog>
