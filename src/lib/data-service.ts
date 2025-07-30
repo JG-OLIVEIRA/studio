@@ -8,14 +8,6 @@ import 'server-only';
 import type { Subject, Teacher, Review } from './types';
 import { pool } from './db';
 
-const iconNameMap: Record<string, string> = {
-    'Matemática': 'Sigma',
-    'Ciências': 'FlaskConical',
-    'História': 'ScrollText',
-    'Literatura': 'BookOpen',
-    'Arte': 'Palette',
-};
-
 const curriculumSubjects = [
     "Geometria Analítica", "Cálculo I", "Cálculo II", "Cálculo III", "Cálculo IV", "Álgebra", "Matemática Discreta", "Fundamentos da Computação",
     "Álgebra Linear", "Cálculo das Probabilidades", "Algoritmos e Est. de Dados I", "Linguagem de Programação I", "Física I",
@@ -49,6 +41,8 @@ async function initializeDatabase() {
 
     const client = await pool.connect();
     try {
+        await client.query('BEGIN');
+
         // Criação de tabelas
         await client.query(`
             CREATE TABLE IF NOT EXISTS subjects (
@@ -97,7 +91,6 @@ async function initializeDatabase() {
         console.log("Verificação de tabelas concluída e constraints corretas.");
 
         // Sincronização de matérias
-        await client.query('BEGIN');
         const dbSubjectsResult = await client.query('SELECT id, name FROM subjects');
         const dbSubjectNames = dbSubjectsResult.rows.map(s => s.name);
 
@@ -114,8 +107,8 @@ async function initializeDatabase() {
             await client.query('DELETE FROM subjects WHERE id = ANY($1::int[])', [idsToRemove]);
             console.log(`Removidas ${subjectsToRemove.length} matérias obsoletas do DB.`);
         }
-        await client.query('COMMIT');
         
+        await client.query('COMMIT');
         dbInitialized = true; // Marca como inicializado
     } catch (error) {
         await client.query('ROLLBACK');
@@ -136,46 +129,40 @@ export async function getSubjects(): Promise<Subject[]> {
   console.log("Buscando dados do banco de dados PostgreSQL...");
   const client = await pool.connect();
   try {
-    const subjectsResult = await client.query('SELECT * FROM subjects ORDER BY name');
-    const teachersResult = await client.query('SELECT * FROM teachers');
-    const reviewsResult = await client.query('SELECT * FROM reviews');
+    const subjectsResult = await client.query('SELECT id, name FROM subjects ORDER BY name');
+    
+    const subjects: Subject[] = [];
 
-    const reviewsByTeacherId = reviewsResult.rows.reduce((acc, review) => {
-      if (!acc[review.teacher_id]) {
-        acc[review.teacher_id] = [];
-      }
-      acc[review.teacher_id].push({
-        id: review.id,
-        rating: review.rating,
-        text: review.text,
-        upvotes: review.upvotes,
-        downvotes: review.downvotes,
-        // Garante que a data seja uma string no formato ISO, que é segura para serialização
-        createdAt: (review.created_at || new Date()).toISOString(),
-      });
-      return acc;
-    }, {} as Record<number, Review[]>);
-
-    const teachersBySubjectId = teachersResult.rows.reduce((acc, teacher) => {
-        if (!acc[teacher.subject_id]) {
-            acc[teacher.subject_id] = [];
+    for (const subjectRow of subjectsResult.rows) {
+        const teachersResult = await client.query('SELECT id, name FROM teachers WHERE subject_id = $1', [subjectRow.id]);
+        
+        const teachers: Teacher[] = [];
+        for (const teacherRow of teachersResult.rows) {
+            const reviewsResult = await client.query('SELECT * FROM reviews WHERE teacher_id = $1', [teacherRow.id]);
+            const reviews: Review[] = reviewsResult.rows.map(review => ({
+                id: review.id,
+                rating: review.rating,
+                text: review.text,
+                upvotes: review.upvotes,
+                downvotes: review.downvotes,
+                createdAt: (review.created_at || new Date()).toISOString(),
+            }));
+            
+            teachers.push({
+                id: teacherRow.id,
+                name: teacherRow.name,
+                subject: subjectRow.name,
+                reviews: reviews,
+            });
         }
-        acc[teacher.subject_id].push({
-            id: teacher.id,
-            name: teacher.name,
-            subject: '', // Placeholder, will be set later if needed
-            reviews: reviewsByTeacherId[teacher.id] || [],
+        
+        subjects.push({
+            id: subjectRow.id,
+            name: subjectRow.name,
+            iconName: assignIconName(subjectRow.name),
+            teachers: teachers,
         });
-        return acc;
-    }, {} as Record<number, Teacher[]>);
-
-
-    const subjects: Subject[] = subjectsResult.rows.map(subject => ({
-      id: subject.id,
-      name: subject.name,
-      iconName: assignIconName(subject.name),
-      teachers: (teachersBySubjectId[subject.id] || []).map(t => ({...t, subject: subject.name })),
-    }));
+    }
 
     return subjects;
 
