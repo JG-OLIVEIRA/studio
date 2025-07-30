@@ -244,29 +244,6 @@ export async function deleteReview(reviewId: number): Promise<void> {
 }
 
 /**
- * Atualiza o nome de uma matéria no banco de dados.
- */
-export async function updateSubjectName(subjectId: number, newName: string): Promise<void> {
-    console.log(`Atualizando matéria com ID ${subjectId} para o novo nome: ${newName}`);
-    if (!curriculumSubjects.includes(newName)) {
-        throw new Error("O novo nome da matéria não é válido na grade curricular.");
-    }
-
-    const client = await pool.connect();
-    try {
-        await client.query('UPDATE subjects SET name = $1 WHERE id = $2', [newName, subjectId]);
-    } catch (error) {
-        console.error("Erro ao atualizar o nome da matéria:", error);
-        if ((error as any).code === '23505') { // unique_violation
-            throw new Error("Uma matéria com este nome já existe.");
-        }
-        throw new Error("Falha ao atualizar o nome da matéria no banco de dados.");
-    } finally {
-        client.release();
-    }
-}
-
-/**
  * Incrementa o contador de upvotes de uma avaliação.
  */
 export async function upvoteReview(reviewId: number): Promise<void> {

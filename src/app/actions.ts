@@ -45,14 +45,6 @@ export async function deleteReview(reviewId: number) {
 }
 
 /**
- * Server action to update a subject's name.
- */
-export async function updateSubjectName(subjectId: number, newName: string) {
-    await DataService.updateSubjectName(subjectId, newName);
-    revalidatePath('/');
-}
-
-/**
  * Server action to upvote a review.
  */
 export async function upvoteReview(reviewId: number) {
