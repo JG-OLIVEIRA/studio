@@ -172,24 +172,23 @@ export async function getSubjects(): Promise<Subject[]> {
     const result = await client.query(query);
 
     const subjectsMap: Map<number, Subject> = new Map();
-    const teachersMap: Map<number, Teacher> = new Map();
 
     for (const row of result.rows) {
-      // Get or create Subject
-      let subject = subjectsMap.get(row.subject_id);
-      if (!subject) {
-        subject = {
+      // Garante que a matéria exista no Map
+      if (!subjectsMap.has(row.subject_id)) {
+        subjectsMap.set(row.subject_id, {
           id: row.subject_id,
           name: row.subject_name,
           iconName: assignIconName(row.subject_name),
           teachers: [],
-        };
-        subjectsMap.set(row.subject_id, subject);
+        });
       }
+      const subject = subjectsMap.get(row.subject_id)!;
 
+      // Se houver professor na linha, processe-o
       if (row.teacher_id) {
-        // Get or create Teacher
-        let teacher = teachersMap.get(row.teacher_id);
+        // Encontra ou cria o professor DENTRO da matéria atual
+        let teacher = subject.teachers.find(t => t.id === row.teacher_id);
         if (!teacher) {
           teacher = {
             id: row.teacher_id,
@@ -197,22 +196,22 @@ export async function getSubjects(): Promise<Subject[]> {
             subject: subject.name,
             reviews: [],
           };
-          teachersMap.set(row.teacher_id, teacher);
           subject.teachers.push(teacher);
         }
 
+        // Se houver avaliação, adicione-a ao professor
         if (row.review_id) {
-          // Add review
-          const existingReview = teacher.reviews.find(r => r.id === row.review_id);
-          if (!existingReview) {
-            teacher.reviews.push({
-              id: row.review_id,
-              text: row.review_text,
-              rating: row.review_rating,
-              upvotes: row.review_upvotes,
-              downvotes: row.review_downvotes,
-              createdAt: (row.review_created_at || new Date()).toISOString(),
-            });
+          const review: Review = {
+            id: row.review_id,
+            text: row.review_text,
+            rating: row.review_rating,
+            upvotes: row.review_upvotes,
+            downvotes: row.review_downvotes,
+            createdAt: (row.review_created_at || new Date()).toISOString(),
+          };
+          // Evita duplicatas de avaliações
+          if (!teacher.reviews.some(r => r.id === review.id)) {
+            teacher.reviews.push(review);
           }
         }
       }
