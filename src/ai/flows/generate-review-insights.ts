@@ -31,17 +31,17 @@ const prompt = ai.definePrompt({
   name: 'generateReviewInsightsPrompt',
   input: {schema: GenerateReviewInsightsInputSchema},
   output: {schema: GenerateReviewInsightsOutputSchema},
-  prompt: `You are an AI assistant tasked with generating insights from student reviews for teachers.
+  prompt: `Você é um assistente de IA encarregado de gerar insights a partir de avaliações de alunos para professores.
 
-  Teacher Name: {{{teacherName}}}
-  Subject: {{{subject}}}
-  Reviews:
+  Nome do Professor: {{{teacherName}}}
+  Matéria: {{{subject}}}
+  Avaliações:
   {{#each reviews}}
   - {{{this}}}
   {{/each}}
 
-  Generate a concise summary of the key strengths and weaknesses highlighted in the reviews. Focus on providing actionable insights for the teacher.
-  Response should be less than 200 words.
+  Gere um resumo conciso dos principais pontos fortes e fracos destacados nas avaliações. Concentre-se em fornecer insights práticos para o professor.
+  A resposta deve ter menos de 200 palavras e ser em português do Brasil.
   `,
 });
 
