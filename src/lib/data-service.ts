@@ -29,24 +29,24 @@ async function cleanupInvalidData() {
     try {
       console.log("Iniciando limpeza de dados inválidos...");
       // Remove avaliações com texto muito curto
-      await client.query(`DELETE FROM reviews WHERE LENGTH(text) < 10;`);
+      await client.query(`DELETE FROM reviews WHERE LENGTH(text) < 15;`);
       // Remove professores com nomes muito curtos
-      await client.query(`DELETE FROM teachers WHERE LENGTH(name) < 2;`);
+      await client.query(`DELETE FROM teachers WHERE LENGTH(name) < 3;`);
       // Remove matérias com nomes muito curtos (e seus professores e avaliações em cascata, se configurado)
       // Primeiro, deletar reviews de professores em matérias com nomes curtos
       await client.query(`
         DELETE FROM reviews WHERE teacher_id IN (
-            SELECT t.id FROM teachers t JOIN subjects s ON t.subject_id = s.id WHERE LENGTH(s.name) < 2
+            SELECT t.id FROM teachers t JOIN subjects s ON t.subject_id = s.id WHERE LENGTH(s.name) < 3
         );
       `);
       // Segundo, deletar os professores
       await client.query(`
         DELETE FROM teachers WHERE subject_id IN (
-            SELECT id FROM subjects WHERE LENGTH(name) < 2
+            SELECT id FROM subjects WHERE LENGTH(name) < 3
         );
       `);
       // Por fim, deletar as matérias
-      await client.query(`DELETE FROM subjects WHERE LENGTH(name) < 2;`);
+      await client.query(`DELETE FROM subjects WHERE LENGTH(name) < 3;`);
       
       console.log("Limpeza de dados concluída.");
     } catch (error) {
