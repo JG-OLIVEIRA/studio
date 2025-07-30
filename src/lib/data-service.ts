@@ -60,11 +60,69 @@ async function ensureDbTablesExist() {
 }
 
 /**
+ * Executa uma limpeza única de dados inválidos no banco de dados.
+ */
+async function cleanupInvalidData() {
+    console.log("Iniciando limpeza de dados inválidos...");
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Remove avaliações com texto muito curto ou autor inválido
+        const deletedReviews = await client.query(`
+            DELETE FROM reviews
+            WHERE LENGTH(TRIM(text)) < 15 OR LENGTH(TRIM(author)) < 3
+            RETURNING id;
+        `);
+        if (deletedReviews.rowCount > 0) {
+            console.log(`Removidas ${deletedReviews.rowCount} avaliações inválidas.`);
+        }
+
+        // Remove professores que ficaram sem nenhuma avaliação após a limpeza
+        const deletedTeachers = await client.query(`
+            DELETE FROM teachers
+            WHERE id IN (
+                SELECT t.id FROM teachers t
+                LEFT JOIN reviews r ON t.id = r.teacher_id
+                GROUP BY t.id
+                HAVING COUNT(r.id) = 0
+            )
+            RETURNING id;
+        `);
+        if (deletedTeachers.rowCount > 0) {
+            console.log(`Removidos ${deletedTeachers.rowCount} professores sem avaliações.`);
+        }
+
+         // Remove matérias que ficaram sem professores
+         const deletedSubjects = await client.query(`
+            DELETE FROM subjects
+            WHERE id NOT IN (SELECT DISTINCT subject_id FROM teachers)
+            RETURNING id;
+        `);
+        if (deletedSubjects.rowCount > 0) {
+            console.log(`Removidas ${deletedSubjects.rowCount} matérias sem professores.`);
+        }
+
+
+        await client.query('COMMIT');
+        console.log("Limpeza de dados concluída com sucesso.");
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error("Erro durante a limpeza de dados:", error);
+    } finally {
+        client.release();
+    }
+}
+
+
+/**
  * Busca todas as matérias, seus professores e avaliações do banco de dados.
  */
 export async function getSubjects(): Promise<Subject[]> {
   // Garante que as tabelas existem antes de tentar buscar os dados
   await ensureDbTablesExist();
+  // Roda a limpeza manualmente uma vez
+  await cleanupInvalidData();
 
   console.log("Buscando dados do banco de dados PostgreSQL...");
   const client = await pool.connect();
@@ -93,6 +151,7 @@ export async function getSubjects(): Promise<Subject[]> {
         acc[teacher.subject_id].push({
             id: teacher.id,
             name: teacher.name,
+            subject: '', // Placeholder, will be set later if needed
             reviews: reviewsByTeacherId[teacher.id] || [],
         });
         return acc;
@@ -102,7 +161,7 @@ export async function getSubjects(): Promise<Subject[]> {
     const subjects: Subject[] = subjectsResult.rows.map(subject => ({
       name: subject.name,
       iconName: assignIconName(subject.name),
-      teachers: teachersBySubjectId[subject.id] || [],
+      teachers: (teachersBySubjectId[subject.id] || []).map(t => ({...t, subject: subject.name })),
     }));
 
     return subjects;
