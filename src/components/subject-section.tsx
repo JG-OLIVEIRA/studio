@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface SubjectSectionProps {
   subject: Subject;
+  onUpdate: () => void; // Callback to trigger data refetch
 }
 
 const calculateAverageRating = (teacher: Teacher) => {
@@ -13,7 +14,7 @@ const calculateAverageRating = (teacher: Teacher) => {
 };
 
 
-export default function SubjectSection({ subject }: SubjectSectionProps) {
+export default function SubjectSection({ subject, onUpdate }: SubjectSectionProps) {
   const sortedTeachers = subject.teachers
     .map(teacher => ({
       ...teacher,
@@ -42,6 +43,7 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
               <TeacherCard
                 key={teacher.id}
                 teacher={{...teacher, subject: subject.name}}
+                onReviewAdded={onUpdate}
               />
             ))}
           </div>

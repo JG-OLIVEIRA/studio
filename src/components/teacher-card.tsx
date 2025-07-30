@@ -10,35 +10,39 @@ import AIReviewInsights from './ai-review-insights';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { AddReviewForm, type ReviewFormValues } from './add-review-form';
-import * as DataService from '@/lib/data-service';
 
 interface TeacherCardProps {
   teacher: Teacher;
+  onReviewAdded: () => void; // Callback to notify parent about new review
 }
 
-export default function TeacherCard({ teacher }: TeacherCardProps) {
+export default function TeacherCard({ teacher, onReviewAdded }: TeacherCardProps) {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
-  const [showAllReviews, setShowAllReviews] = useState(false);
 
-  // NOTA: A atualização de estado para refletir a nova avaliação agora é
-  // gerenciada no componente pai (`page.tsx`) para manter uma única fonte da verdade.
-  // Este componente apenas envia o evento de submissão.
-  const handleAddReview = (data: ReviewFormValues) => {
+  const handleAddReview = async (data: ReviewFormValues) => {
     if (!teacher.subject) {
       console.error("A matéria do professor não foi definida. Não é possível adicionar avaliação.");
       return;
     }
-    DataService.addTeacherOrReview({
-        teacherName: teacher.name,
-        subjectName: teacher.subject,
-        reviewAuthor: data.author,
-        reviewText: data.text,
-        reviewRating: data.rating,
-    });
-    // O ideal seria que a página principal revalidasse os dados,
-    // mas para manter a simplicidade, vamos fechar o modal.
-    // A atualização aparecerá no próximo recarregamento dos dados.
+
+    // Since addTeacherOrReview is a server action, it needs to be called from an async function.
+    // We are wrapping the original DataService.addTeacherOrReview call to make it a server action.
+    const addReviewAction = async (formData: typeof data) => {
+        'use server';
+        const { addTeacherOrReview } = await import('@/lib/data-service');
+        await addTeacherOrReview({
+            teacherName: teacher.name,
+            subjectName: teacher.subject!,
+            reviewAuthor: formData.author,
+            reviewText: formData.text,
+            reviewRating: formData.rating,
+        });
+    }
+    
+    await addReviewAction(data);
+
     setIsReviewOpen(false);
+    onReviewAdded(); // Call the callback to trigger data refetch in the parent
   }
 
   const averageRating = useMemo(() => {
@@ -48,7 +52,6 @@ export default function TeacherCard({ teacher }: TeacherCardProps) {
   }, [teacher.reviews]);
   
   const hasReviews = teacher.reviews.length > 0;
-  const reviewsToShow = showAllReviews ? teacher.reviews : teacher.reviews.slice(0, 2);
 
   return (
     <Card
