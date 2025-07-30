@@ -9,33 +9,35 @@ import StarRating from './star-rating';
 import AIReviewInsights from './ai-review-insights';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
-import { AddReviewForm } from './add-review-form';
+import { AddReviewForm, type ReviewFormValues } from './add-review-form';
+import * as DataService from '@/lib/data-service';
 
 interface TeacherCardProps {
   teacher: Teacher;
 }
 
-export default function TeacherCard({ teacher: initialTeacher }: TeacherCardProps) {
-  // The teacher state is now managed locally in the card for simplicity,
-  // but a real app would likely lift this state up or use a global state manager.
-  const [teacher, setTeacher] = useState(initialTeacher);
+export default function TeacherCard({ teacher }: TeacherCardProps) {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
-  // This will not persist across reloads as state is not lifted to the page component
-  // which now also loses its state on reload. This is a limitation of not using a DB.
-  const handleAddReview = (data: { author: string; text: string; rating: number }) => {
-    const newReview: Review = {
-      id: Date.now(), // simple unique id
-      ...data,
-    };
-    
-    // NOTE: This state update is local to the TeacherCard.
-    // It will NOT update the parent `subjectsData` state in `page.tsx`.
-    // For a real application, this state logic should be lifted up.
-    setTeacher(prev => ({
-        ...prev,
-        reviews: [...prev.reviews, newReview]
-    }));
+  // NOTA: A atualização de estado para refletir a nova avaliação agora é
+  // gerenciada no componente pai (`page.tsx`) para manter uma única fonte da verdade.
+  // Este componente apenas envia o evento de submissão.
+  const handleAddReview = (data: ReviewFormValues) => {
+    if (!teacher.subject) {
+      console.error("A matéria do professor não foi definida. Não é possível adicionar avaliação.");
+      return;
+    }
+    DataService.addTeacherOrReview({
+        teacherName: teacher.name,
+        subjectName: teacher.subject,
+        reviewAuthor: data.author,
+        reviewText: data.text,
+        reviewRating: data.rating,
+    });
+    // O ideal seria que a página principal revalidasse os dados,
+    // mas para manter a simplicidade, vamos fechar o modal.
+    // A atualização aparecerá no próximo recarregamento dos dados.
     setIsReviewOpen(false);
   }
 
@@ -46,6 +48,7 @@ export default function TeacherCard({ teacher: initialTeacher }: TeacherCardProp
   }, [teacher.reviews]);
   
   const hasReviews = teacher.reviews.length > 0;
+  const reviewsToShow = showAllReviews ? teacher.reviews : teacher.reviews.slice(0, 2);
 
   return (
     <Card

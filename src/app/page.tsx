@@ -1,52 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpen, FlaskConical, Palette, ScrollText, Sigma, GraduationCap, PlusCircle } from 'lucide-react';
 import type { Subject, Teacher } from '@/lib/types';
 import SubjectSection from '@/components/subject-section';
 import { Button } from '@/components/ui/button';
 import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dialog';
-
-// ============================================================================
-// DATABASE CONFIGURATION
-// ============================================================================
-// This is where you should fetch your data from a database.
-// The data below is mocked for demonstration purposes and stored in memory.
-// ============================================================================
-const initialSubjectsData: Subject[] = [
-  {
-    name: 'Matemática',
-    icon: Sigma,
-    teachers: [],
-  },
-  {
-    name: 'Ciências',
-    icon: FlaskConical,
-    teachers: [],
-  },
-  {
-    name: 'História',
-    icon: ScrollText,
-    teachers: [],
-  },
-  {
-    name: 'Literatura',
-    icon: BookOpen,
-    teachers: [],
-  },
-  {
-    name: 'Arte',
-    icon: Palette,
-    teachers: [],
-  },
-];
-// ============================================================================
-// END OF DATABASE CONFIGURATION
-// ============================================================================
+import * as DataService from '@/lib/data-service';
 
 export default function Home() {
-  const [subjectsData, setSubjectsData] = useState<Subject[]>(initialSubjectsData);
+  const [subjectsData, setSubjectsData] = useState<Subject[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    // Carrega os dados iniciais do serviço de dados.
+    // No futuro, isso buscará os dados do seu banco de dados MySQL.
+    const data = DataService.getSubjects();
+    setSubjectsData(data);
+  }, []);
 
   const allTeachers = subjectsData.flatMap(s => s.teachers.map(t => ({ ...t, subject: s.name })));
   const allSubjectNames = subjectsData.map(s => s.name);
@@ -58,58 +29,27 @@ export default function Home() {
     reviewText: string;
     reviewRating: number;
   }) => {
-    setSubjectsData(prevSubjects => {
-      const subjectsCopy = JSON.parse(JSON.stringify(prevSubjects));
+    // Chama o serviço de dados para adicionar a nova informação.
+    // No futuro, isso irá interagir com seu banco de dados MySQL.
+    DataService.addTeacherOrReview(data);
 
-      let subjectIndex = subjectsCopy.findIndex((s: Subject) => s.name.toLowerCase() === data.subjectName.toLowerCase());
-
-      if (subjectIndex === -1) {
-        const newSubject: Subject = {
-          name: data.subjectName,
-          icon: GraduationCap, 
-          teachers: []
-        };
-        subjectsCopy.push(newSubject);
-        subjectIndex = subjectsCopy.length - 1;
-      }
-      
-      const subject = subjectsCopy[subjectIndex];
-      let teacher = subject.teachers.find((t: Teacher) => t.name.toLowerCase() === data.teacherName.toLowerCase());
-
-      const newReview = {
-        id: Date.now(),
-        author: data.reviewAuthor,
-        rating: data.reviewRating,
-        text: data.reviewText,
-      };
-
-      if (teacher) {
-        teacher.reviews.push(newReview);
-      } else {
-        const newTeacher: Teacher = {
-          id: Date.now(),
-          name: data.teacherName,
-          reviews: [newReview],
-        };
-        subject.teachers.push(newTeacher);
-      }
-
-      // We need to re-assign icons because they don't serialize/deserialize well
-      subjectsCopy.forEach((subj: Subject) => {
-        const originalSubject = initialSubjectsData.find(is => is.name === subj.name);
-        if (originalSubject) {
-          subj.icon = originalSubject.icon;
-        } else {
-          subj.icon = GraduationCap;
-        }
-      });
-
-      return subjectsCopy;
-    });
-
+    // Recarrega os dados para refletir a mudança.
+    const updatedData = DataService.getSubjects();
+    setSubjectsData(updatedData);
+    
     setIsDialogOpen(false);
   };
 
+  // Se os dados ainda não carregaram, pode mostrar um loader
+  if (subjectsData.length === 0) {
+    return (
+      <main className="min-h-screen w-full bg-background font-sans">
+        <div className="container mx-auto px-4 py-8 sm:py-12">
+          <p>Carregando...</p>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen w-full bg-background font-sans">
