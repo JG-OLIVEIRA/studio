@@ -11,52 +11,33 @@ import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dia
 // DATABASE CONFIGURATION
 // ============================================================================
 // This is where you should fetch your data from a database.
-// The data below is mocked for demonstration purposes.
-// Replace this with your actual data fetching logic (e.g., from Firebase,
-// Supabase, or your own backend API).
+// The data below is mocked for demonstration purposes and stored in memory.
 // ============================================================================
 const initialSubjectsData: Subject[] = [
   {
     name: 'Matemática',
     icon: Sigma,
-    teachers: [
-      { id: 1, name: 'Dr. Evelyn Reed', reviews: [] },
-      { id: 2, name: 'Mr. Alan Turing', reviews: [] },
-      { id: 3, name: 'Ms. Julia Robinson', reviews: [] },
-    ],
+    teachers: [],
   },
   {
     name: 'Ciências',
     icon: FlaskConical,
-    teachers: [
-      { id: 4, name: 'Prof. Marie Curie', reviews: [] },
-      { id: 5, name: 'Dr. Carl Sagan', reviews: [] },
-    ],
+    teachers: [],
   },
   {
     name: 'História',
     icon: ScrollText,
-    teachers: [
-      { id: 6, name: 'Dr. Howard Zinn', reviews: [] },
-      { id: 7, name: 'Ms. Mary Beard', reviews: [] },
-    ],
+    teachers: [],
   },
   {
     name: 'Literatura',
     icon: BookOpen,
-    teachers: [
-      { id: 8, name: 'Mr. William Shakespeare', reviews: [] },
-      { id: 9, name: 'Ms. Virginia Woolf', reviews: [] },
-      { id: 10, name: 'Prof. Toni Morrison', reviews: [] },
-    ],
+    teachers: [],
   },
   {
     name: 'Arte',
     icon: Palette,
-    teachers: [
-      { id: 11, name: 'Mr. Leonardo da Vinci', reviews: [] },
-      { id: 12, name: 'Ms. Frida Kahlo', reviews: [] },
-    ],
+    teachers: [],
   },
 ];
 // ============================================================================
