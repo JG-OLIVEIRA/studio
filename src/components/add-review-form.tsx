@@ -13,15 +13,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const reviewSchema = z.object({
-  author: z.string().trim()
-    .min(4, "O nome deve ter pelo menos 4 caracteres.")
-    .max(100, "O nome deve ter no máximo 100 caracteres."),
   text: z.string().trim()
     .min(25, "A avaliação deve ter pelo menos 25 caracteres.")
     .max(1000, "A avaliação deve ter no máximo 1000 caracteres."),
@@ -39,7 +35,6 @@ export function AddReviewForm({ onSubmit, onClose }: AddReviewFormProps) {
   const form = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
     defaultValues: {
-      author: "",
       text: "",
       rating: 0,
     },
@@ -49,19 +44,6 @@ export function AddReviewForm({ onSubmit, onClose }: AddReviewFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="author"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Seu Nome</FormLabel>
-              <FormControl>
-                <Input placeholder="João da Silva" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <FormField
           control={form.control}
           name="text"

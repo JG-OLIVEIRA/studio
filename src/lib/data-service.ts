@@ -44,12 +44,21 @@ async function ensureDbTablesExist() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS reviews (
         id SERIAL PRIMARY KEY,
-        author VARCHAR(255) NOT NULL,
         text TEXT NOT NULL,
         rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
         teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE
       );
     `);
+    // Check if 'author' column exists and drop it if it does
+    const authorColumnCheck = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='reviews' AND column_name='author';
+    `);
+    if(authorColumnCheck.rowCount > 0) {
+        await client.query('ALTER TABLE reviews DROP COLUMN author;');
+    }
+    
     console.log("Verificação de tabelas concluída. As tabelas necessárias existem.");
   } catch (error) {
     console.error("Erro ao criar ou verificar as tabelas do banco de dados:", error);
@@ -79,7 +88,6 @@ export async function getSubjects(): Promise<Subject[]> {
       }
       acc[review.teacher_id].push({
         id: review.id,
-        author: review.author,
         rating: review.rating,
         text: review.text,
       });
@@ -123,7 +131,6 @@ export async function getSubjects(): Promise<Subject[]> {
 export async function addTeacherOrReview(data: {
   teacherName: string;
   subjectName: string;
-  reviewAuthor: string;
   reviewText: string;
   reviewRating: number;
 }): Promise<void> {
@@ -157,8 +164,8 @@ export async function addTeacherOrReview(data: {
 
         // 3. Insere a avaliação
         await client.query(
-            'INSERT INTO reviews (author, text, rating, teacher_id) VALUES ($1, $2, $3, $4)',
-            [data.reviewAuthor, data.reviewText, data.reviewRating, teacherId]
+            'INSERT INTO reviews (text, rating, teacher_id) VALUES ($1, $2, $3)',
+            [data.reviewText, data.reviewRating, teacherId]
         );
 
         await client.query('COMMIT');

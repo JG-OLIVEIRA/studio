@@ -21,7 +21,6 @@ export async function getAIInsights(input: GenerateReviewInsightsInput): Promise
 export async function handleAddTeacherOrReview(data: {
     teacherName: string;
     subjectName: string;
-    reviewAuthor: string;
     reviewText: string;
     reviewRating: number;
 }) {

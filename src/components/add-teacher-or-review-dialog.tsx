@@ -34,9 +34,6 @@ const formSchema = z.object({
   subjectName: z.string().trim()
     .min(4, "A matéria deve ter pelo menos 4 caracteres.")
     .max(100, "A matéria deve ter no máximo 100 caracteres."),
-  reviewAuthor: z.string().trim()
-    .min(4, "Seu nome deve ter pelo menos 4 caracteres.")
-    .max(100, "Seu nome deve ter no máximo 100 caracteres."),
   reviewText: z.string().trim()
     .min(25, "A avaliação deve ter pelo menos 25 caracteres.")
     .max(1000, "A avaliação deve ter no máximo 1000 caracteres."),
@@ -49,7 +46,7 @@ interface AddTeacherOrReviewDialogProps {
     children: ReactNode;
     allTeachers: (Teacher & { subject: string })[];
     allSubjectNames: string[];
-    onSubmit: (data: FormValues) => void;
+    onSubmit: (data: Omit<FormValues, 'reviewAuthor'>) => void;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
@@ -73,7 +70,6 @@ export function AddTeacherOrReviewDialog({
     defaultValues: {
       teacherName: "",
       subjectName: "",
-      reviewAuthor: "",
       reviewText: "",
       reviewRating: 0,
     },
@@ -141,19 +137,6 @@ export function AddTeacherOrReviewDialog({
                     />
                 </div>
                 
-                <FormField
-                    control={form.control}
-                    name="reviewAuthor"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Seu Nome</FormLabel>
-                        <FormControl>
-                            <Input placeholder="ex: Joana da Silva" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
                 <FormField
                     control={form.control}
                     name="reviewText"

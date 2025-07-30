@@ -28,7 +28,6 @@ export default function TeacherCard({ teacher }: TeacherCardProps) {
     await handleAddTeacherOrReview({
         teacherName: teacher.name,
         subjectName: teacher.subject!,
-        reviewAuthor: data.author,
         reviewText: data.text,
         reviewRating: data.rating,
     });

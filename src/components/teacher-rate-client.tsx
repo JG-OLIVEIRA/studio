@@ -24,7 +24,6 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
   const onAddTeacherOrReview = async (data: {
     teacherName: string;
     subjectName: string;
-    reviewAuthor: string;
     reviewText: string;
     reviewRating: number;
   }) => {
