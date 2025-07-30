@@ -4,7 +4,6 @@
 import { Trophy } from 'lucide-react';
 import type { Teacher } from '@/lib/types';
 import StarRating from './star-rating';
-import { useMemo } from 'react';
 
 interface FeaturedTeacherProps {
   teacher: Teacher;
@@ -12,11 +11,7 @@ interface FeaturedTeacherProps {
 
 export default function FeaturedTeacher({ teacher }: FeaturedTeacherProps) {
   
-  const averageRating = useMemo(() => {
-    if (teacher.reviews.length === 0) return 0;
-    const total = teacher.reviews.reduce((acc, review) => acc + review.rating, 0);
-    return total / teacher.reviews.length;
-  }, [teacher.reviews]);
+  const averageRating = teacher.averageRating ?? 0;
 
   return (
     <div className="hidden md:flex items-center gap-4 mr-auto pl-4 border-l ml-4" onClick={(e) => e.stopPropagation()}>

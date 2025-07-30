@@ -1,3 +1,4 @@
+
 /**
  * @file data-service.ts
  * 
@@ -28,6 +29,12 @@ function assignIconName(subjectName: string): string {
     if (name.includes('grafos')) return 'GitGraph';
     return 'GraduationCap';
 }
+
+const calculateAverageRating = (reviews: Review[]): number => {
+    if (reviews.length === 0) return 0;
+    const total = reviews.reduce((acc, review) => acc + review.rating, 0);
+    return total / reviews.length;
+};
 
 // Variáveis para garantir que a inicialização ocorra apenas uma vez, de forma segura.
 let initializationPromise: Promise<void> | null = null;
@@ -132,6 +139,9 @@ export async function initializeDatabase() {
             throw new Error("Não foi possível inicializar o banco de dados.");
         } finally {
             client.release();
+            if (initializationPromise) {
+                initializationPromise = null; // Clean up promise after completion/failure
+            }
         }
     })();
 
@@ -175,9 +185,10 @@ export async function getSubjects(): Promise<Subject[]> {
     const subjectsMap: Map<number, Subject> = new Map();
     const teachersMap: Map<number, Teacher> = new Map();
 
-    // Primeiro, inicializa todas as matérias
-    const subjectsResult = await client.query('SELECT id, name FROM subjects ORDER BY name');
-    for (const subjectRow of subjectsResult.rows) {
+    // Primeiro, inicializa todas as matérias a partir do resultado da query
+    // para garantir que mesmo matérias sem professores sejam listadas.
+    const allSubjects = await client.query('SELECT id, name FROM subjects ORDER BY name');
+    for (const subjectRow of allSubjects.rows) {
         if (!subjectsMap.has(subjectRow.id)) {
             subjectsMap.set(subjectRow.id, {
                 id: subjectRow.id,
@@ -189,20 +200,19 @@ export async function getSubjects(): Promise<Subject[]> {
     }
 
     for (const row of result.rows) {
-        // Processa apenas linhas que têm professores
-        if (row.teacher_id) {
-            // Encontra ou cria o professor no mapa global de professores
-            if (!teachersMap.has(row.teacher_id)) {
-                teachersMap.set(row.teacher_id, {
-                    id: row.teacher_id,
-                    name: row.teacher_name,
-                    reviews: [],
-                });
-            }
-            const teacher = teachersMap.get(row.teacher_id)!;
-            
-            // Adiciona a avaliação (se houver) ao professor
-            if (row.review_id) {
+        if (row.teacher_id && !teachersMap.has(row.teacher_id)) {
+            teachersMap.set(row.teacher_id, {
+                id: row.teacher_id,
+                name: row.teacher_name,
+                reviews: [],
+                subject: row.subject_name, // Associa a matéria ao professor
+                averageRating: 0 // Será calculado depois
+            });
+        }
+
+        if (row.review_id) {
+            const teacher = teachersMap.get(row.teacher_id);
+            if (teacher) {
                 const review: Review = {
                     id: row.review_id,
                     text: row.review_text,
@@ -211,21 +221,25 @@ export async function getSubjects(): Promise<Subject[]> {
                     downvotes: row.review_downvotes,
                     createdAt: (row.review_created_at || new Date()).toISOString(),
                 };
+                // Evita duplicar a mesma avaliação se a query retornar múltiplas linhas por algum motivo
                 if (!teacher.reviews.some(r => r.id === review.id)) {
                     teacher.reviews.push(review);
                 }
             }
-            
-            // Associa o professor (com suas avaliações) à matéria correta
-            const subject = subjectsMap.get(row.subject_id);
-            if (subject && !subject.teachers.some(t => t.id === teacher.id)) {
-                subject.teachers.push({
-                  ...teacher,
-                  subject: subject.name, // Garante que o nome da matéria está no professor
-                });
-            }
         }
     }
+    
+    // Calcula a média e associa os professores às matérias
+    teachersMap.forEach(teacher => {
+        teacher.averageRating = calculateAverageRating(teacher.reviews);
+        const subject = Array.from(subjectsMap.values()).find(s => s.name === teacher.subject);
+        if (subject) {
+             // Garante que o professor não seja adicionado múltiplas vezes à mesma matéria
+            if (!subject.teachers.some(t => t.id === teacher.id)) {
+                subject.teachers.push(teacher);
+            }
+        }
+    });
     
     return Array.from(subjectsMap.values());
 

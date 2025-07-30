@@ -11,12 +11,6 @@ import {
 } from "@/components/ui/accordion"
 import FeaturedTeacher from './featured-teacher';
 
-const calculateAverageRating = (teacher: Teacher) => {
-  if (teacher.reviews.length === 0) return 0;
-  const total = teacher.reviews.reduce((acc, review) => acc + review.rating, 0);
-  return total / teacher.reviews.length;
-};
-
 const getIconComponent = (iconName: string): React.ElementType => {
   const IconComponent = (LucideIcons as any)[iconName];
   return IconComponent || LucideIcons.GraduationCap;
@@ -24,19 +18,17 @@ const getIconComponent = (iconName: string): React.ElementType => {
 
 
 export default function SubjectSection({ subject }: SubjectSectionProps) {
-  const sortedTeachers = subject.teachers
-    .map(teacher => ({
-      ...teacher,
-      averageRating: calculateAverageRating(teacher),
-    }))
+  const sortedTeachers = [...subject.teachers]
     .sort((a, b) => {
-      if (b.averageRating !== a.averageRating) {
-        return b.averageRating - a.averageRating;
+      const ratingA = a.averageRating ?? 0;
+      const ratingB = b.averageRating ?? 0;
+      if (ratingB !== ratingA) {
+        return ratingB - ratingA;
       }
       return b.reviews.length - a.reviews.length;
     });
 
-  const topTeacher = sortedTeachers.length > 0 && sortedTeachers[0].averageRating >= 4 ? sortedTeachers[0] : null;
+  const topTeacher = sortedTeachers.length > 0 && (sortedTeachers[0].averageRating ?? 0) >= 4 ? sortedTeachers[0] : null;
 
   const Icon = getIconComponent(subject.iconName);
 

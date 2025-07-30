@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Sparkles, MessageSquarePlus, Eye, Trophy } from 'lucide-react';
 import type { Teacher } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -20,11 +20,7 @@ interface TeacherCardProps {
 export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCardProps) {
   const [isAddReviewOpen, setIsAddReviewOpen] = useState(false);
 
-  const averageRating = useMemo(() => {
-    if (teacher.reviews.length === 0) return 0;
-    const total = teacher.reviews.reduce((acc, review) => acc + review.rating, 0);
-    return total / teacher.reviews.length;
-  }, [teacher.reviews]);
+  const averageRating = teacher.averageRating ?? 0;
   
   const hasReviews = teacher.reviews.length > 0;
 

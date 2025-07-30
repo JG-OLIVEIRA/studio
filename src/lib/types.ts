@@ -14,6 +14,7 @@ export interface Teacher {
   name: string;
   reviews: Review[];
   subject?: string;
+  averageRating?: number;
 }
 
 export interface Subject {
