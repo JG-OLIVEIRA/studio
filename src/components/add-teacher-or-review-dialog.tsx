@@ -22,7 +22,6 @@ import {
   } from './ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Teacher } from '@/lib/types';
@@ -78,7 +77,7 @@ export function AddTeacherOrReviewDialog({
   const teacherExists = useMemo(() => {
     if (!teacherName || !subjectName) return false;
     return allTeachers.some(
-      (t) => t.name.toLowerCase() === teacherName.toLowerCase() && t.subject === subjectName
+      (t) => t.name.toLowerCase() === teacherName.toLowerCase() && t.subject.toLowerCase() === subjectName.toLowerCase()
     );
   }, [teacherName, subjectName, allTeachers]);
 
@@ -95,7 +94,7 @@ export function AddTeacherOrReviewDialog({
             <DialogTitle>{teacherExists ? `Adicionar avaliação para ${teacherName}` : `Adicionar novo professor`}</DialogTitle>
             <DialogDescription>
                 {teacherExists 
-                    ? `Este professor já está em nosso banco de dados. Por favor, adicione sua avaliação abaixo.`
+                    ? `Este professor já está em nosso banco de dados para esta matéria. Por favor, adicione sua avaliação abaixo.`
                     : `Este professor ainda não está em nosso banco de dados. Adicione os detalhes e sua primeira avaliação!`}
             </DialogDescription>
             </DialogHeader>
@@ -121,7 +120,7 @@ export function AddTeacherOrReviewDialog({
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel>Matéria</FormLabel>
-                            <Combobox
+                             <Combobox
                                 options={subjectOptions}
                                 value={field.value}
                                 onChange={field.onChange}

@@ -79,7 +79,7 @@ export default function Home() {
   }) => {
     setSubjectsData(prevSubjects => {
       const subjectsCopy = JSON.parse(JSON.stringify(prevSubjects));
-      let subjectIndex = subjectsCopy.findIndex((s: Subject) => s.name === data.subjectName);
+      let subjectIndex = subjectsCopy.findIndex((s: Subject) => s.name.toLowerCase() === data.subjectName.toLowerCase());
 
       // If subject doesn't exist, create it.
       if (subjectIndex === -1) {
