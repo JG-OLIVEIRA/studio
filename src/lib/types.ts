@@ -4,6 +4,8 @@ export interface Review {
   id: number;
   rating: number;
   text: string;
+  upvotes: number;
+  downvotes: number;
 }
 
 export interface Teacher {

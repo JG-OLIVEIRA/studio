@@ -46,9 +46,27 @@ async function ensureDbTablesExist() {
         id SERIAL PRIMARY KEY,
         text TEXT NOT NULL,
         rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-        teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE
+        teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+        upvotes INTEGER NOT NULL DEFAULT 0,
+        downvotes INTEGER NOT NULL DEFAULT 0
       );
     `);
+    
+    // Add columns if they don't exist
+    const reviewColumns = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name='reviews' AND column_name IN ('upvotes', 'downvotes');
+    `);
+    const existingCols = reviewColumns.rows.map(r => r.column_name);
+    if (!existingCols.includes('upvotes')) {
+      await client.query('ALTER TABLE reviews ADD COLUMN upvotes INTEGER NOT NULL DEFAULT 0;');
+    }
+    if (!existingCols.includes('downvotes')) {
+      await client.query('ALTER TABLE reviews ADD COLUMN downvotes INTEGER NOT NULL DEFAULT 0;');
+    }
+
+
     // Check if 'author' column exists and drop it if it does
     const authorColumnCheck = await client.query(`
         SELECT column_name 
@@ -90,6 +108,8 @@ export async function getSubjects(): Promise<Subject[]> {
         id: review.id,
         rating: review.rating,
         text: review.text,
+        upvotes: review.upvotes,
+        downvotes: review.downvotes,
       });
       return acc;
     }, {} as Record<number, Review[]>);
@@ -210,6 +230,38 @@ export async function updateSubjectName(subjectId: number, newName: string): Pro
             throw new Error("Uma matéria com este nome já existe.");
         }
         throw new Error("Falha ao atualizar o nome da matéria no banco de dados.");
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Incrementa o contador de upvotes de uma avaliação.
+ */
+export async function upvoteReview(reviewId: number): Promise<void> {
+    console.log(`Upvoting review com ID: ${reviewId}`);
+    const client = await pool.connect();
+    try {
+        await client.query('UPDATE reviews SET upvotes = upvotes + 1 WHERE id = $1', [reviewId]);
+    } catch (error) {
+        console.error("Erro ao dar upvote na avaliação:", error);
+        throw new Error("Falha ao registrar o voto.");
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Incrementa o contador de downvotes de uma avaliação.
+ */
+export async function downvoteReview(reviewId: number): Promise<void> {
+    console.log(`Downvoting review com ID: ${reviewId}`);
+    const client = await pool.connect();
+    try {
+        await client.query('UPDATE reviews SET downvotes = downvotes + 1 WHERE id = $1', [reviewId]);
+    } catch (error) {
+        console.error("Erro ao dar downvote na avaliação:", error);
+        throw new Error("Falha ao registrar o voto.");
     } finally {
         client.release();
     }

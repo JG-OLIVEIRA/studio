@@ -51,3 +51,19 @@ export async function updateSubjectName(subjectId: number, newName: string) {
     await DataService.updateSubjectName(subjectId, newName);
     revalidatePath('/');
 }
+
+/**
+ * Server action to upvote a review.
+ */
+export async function upvoteReview(reviewId: number) {
+    await DataService.upvoteReview(reviewId);
+    revalidatePath('/');
+}
+
+/**
+ * Server action to downvote a review.
+ */
+export async function downvoteReview(reviewId: number) {
+    await DataService.downvoteReview(reviewId);
+    revalidatePath('/');
+}
