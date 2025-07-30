@@ -144,7 +144,7 @@ export async function getSubjects(): Promise<Subject[]> {
         text: review.text,
         upvotes: review.upvotes,
         downvotes: review.downvotes,
-        createdAt: review.created_at,
+        createdAt: new Date(review.created_at).toISOString(),
       });
       return acc;
     }, {} as Record<number, Review[]>);
