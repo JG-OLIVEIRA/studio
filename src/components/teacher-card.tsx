@@ -8,25 +8,17 @@ import { Button } from './ui/button';
 
 interface TeacherCardProps {
   teacher: Teacher;
-  isTopTeacher: boolean;
 }
 
-export default function TeacherCard({ teacher, isTopTeacher }: TeacherCardProps) {
+export default function TeacherCard({ teacher }: TeacherCardProps) {
   return (
     <Card
       className={cn(
-        'flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
-        isTopTeacher && 'border-primary shadow-primary/20 hover:shadow-primary/30'
+        'flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1'
       )}
     >
       <CardHeader className="flex-row items-start justify-between gap-4 pb-4">
         <CardTitle className="text-lg font-semibold">{teacher.name}</CardTitle>
-        {isTopTeacher && (
-          <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            <Trophy className="h-4 w-4" />
-            <span>Top Teacher</span>
-          </div>
-        )}
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="flex items-center gap-2">

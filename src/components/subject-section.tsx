@@ -7,10 +7,6 @@ interface SubjectSectionProps {
 }
 
 export default function SubjectSection({ subject }: SubjectSectionProps) {
-  const topTeacher = subject.teachers.reduce((prev, current) => 
-    (prev.rating > current.rating) ? prev : current
-  );
-
   return (
     <section aria-labelledby={`subject-title-${subject.name.replace(/\s+/g, '-')}`}>
       <Card className="overflow-hidden bg-card/80 backdrop-blur-sm">
@@ -28,7 +24,6 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
               <TeacherCard
                 key={teacher.id}
                 teacher={{...teacher, subject: subject.name}}
-                isTopTeacher={teacher.id === topTeacher.id}
               />
             ))}
           </div>
