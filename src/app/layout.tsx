@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'TeacherRate',
-  description: 'Encontre e avalie os melhores professores.',
+  title: 'CcompTeacherRate',
+  description: 'CcompTeacherRate: Encontre e avalie os melhores professores de Ciência da Computação.',
   icons: null,
 };
 
