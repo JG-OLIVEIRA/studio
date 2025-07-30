@@ -3,6 +3,7 @@ import { getSubjectsData } from '@/app/actions';
 import TeacherRateClient from '@/components/teacher-rate-client';
 import { TopTeacherCard } from '@/components/top-teacher-card';
 import type { Teacher } from '@/lib/types';
+import CourseFlowchart from '@/components/course-flowchart';
 
 const calculateAverageRating = (teacher: Teacher) => {
   if (teacher.reviews.length === 0) return 0;
@@ -25,6 +26,13 @@ export default async function Home() {
   const topTeacher = allTeachers.length > 0 
     ? allTeachers.reduce((prev, current) => (prev.averageRating > current.averageRating) ? prev : current)
     : null;
+
+  const handleSubjectClick = (subjectName: string) => {
+    const element = document.getElementById(`subject-title-${subjectName.replace(/\s+/g, '-')}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
 
   return (
     <main className="min-h-screen w-full bg-background font-sans">

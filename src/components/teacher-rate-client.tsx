@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dialog';
 import { handleAddTeacherOrReview } from '@/app/actions';
 import { Input } from '@/components/ui/input';
+import CourseFlowchart from './course-flowchart';
 
 interface TeacherRateClientProps {
   initialSubjectsData: Subject[];
@@ -35,54 +36,37 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
     setIsDialogOpen(false);
   };
 
+  const handleSubjectClick = (subjectName: string) => {
+    const element = document.getElementById(`subject-title-${subjectName.replace(/\s+/g, '-')}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   const filteredSubjects = useMemo(() => {
     if (!searchQuery) {
       return initialSubjectsData;
     }
     const lowercasedQuery = searchQuery.toLowerCase();
     
-    // First, filter subjects by name
-    const subjectsByName = initialSubjectsData.filter(subject =>
-      subject.name.toLowerCase().includes(lowercasedQuery)
-    );
-
-    // Then, filter subjects by teachers' names
-    const subjectsByTeacher = initialSubjectsData.map(subject => {
-        const filteredTeachers = subject.teachers.filter(teacher => 
-            teacher.name.toLowerCase().includes(lowercasedQuery)
-        );
-        return { ...subject, teachers: filteredTeachers };
-    }).filter(subject => subject.teachers.length > 0);
-
-    // Combine and remove duplicates
-    const combined = [...subjectsByName, ...subjectsByTeacher];
-    const uniqueSubjects = Array.from(new Map(combined.map(s => [s.name, s])).values());
-    
-    // In the case of teacher search, we might want to show all teachers of that subject.
-    // Let's refine the logic to return filtered subjects or subjects containing filtered teachers.
-    
     return initialSubjectsData.map(subject => {
-      // If the subject name matches, return it with all its teachers
       if (subject.name.toLowerCase().includes(lowercasedQuery)) {
         return subject;
       }
-      // If not, check if any teacher in this subject matches
       const matchingTeachers = subject.teachers.filter(teacher =>
         teacher.name.toLowerCase().includes(lowercasedQuery)
       );
-      // If there are matching teachers, return the subject but only with those teachers
       if (matchingTeachers.length > 0) {
         return { ...subject, teachers: matchingTeachers };
       }
-      // Otherwise, this subject is filtered out
       return null;
     }).filter((s): s is Subject => s !== null);
-
 
   }, [initialSubjectsData, searchQuery]);
 
   return (
     <>
+      <CourseFlowchart onSubjectClick={handleSubjectClick} />
       <div className="my-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
             <div className="relative">
