@@ -65,7 +65,15 @@ const generateReviewInsightsFlow = ai.defineFlow(
     inputSchema: GenerateReviewInsightsInputSchema,
     outputSchema: GenerateReviewInsightsOutputSchema,
   },
-  async input => {
+  async (input) => {
+    // Handle the case where there are no reviews to avoid calling the AI with an empty prompt.
+    if (!input.reviews || input.reviews.length === 0) {
+      return {
+        insights: 'Ainda não há avaliações suficientes para que a IA possa gerar uma análise divertida. Adicione uma avaliação para começar!',
+        passWithoutStudyingChance: 1,
+      };
+    }
+    
     const {output} = await prompt(input);
     return output!;
   }
