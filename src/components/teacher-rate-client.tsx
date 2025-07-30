@@ -12,17 +12,6 @@ import { Input } from '@/components/ui/input';
 import CourseFlowchart from './course-flowchart';
 import { Accordion } from '@/components/ui/accordion';
 
-const flowchartData = [
-    { semester: 1, subjects: ["Geometria Analítica", "Cálculo I", "Álgebra", "Matemática Discreta", "Fundamentos da Computação"] },
-    { semester: 2, subjects: ["Álgebra Linear", "Cálculo II", "Cálculo das Probabilidades", "Algoritmos e Est. de Dados I", "Linguagem de Programação I", "Física I"] },
-    { semester: 3, subjects: ["Português Instrumental", "Cálculo III", "Algoritmos e Est. de Dados II", "Elementos de Lógica", "Linguagem de Programação II", "Teoria da Computação"] },
-    { semester: 4, subjects: ["Cálculo Numérico", "Cálculo IV", "Algoritmos em Grafos", "Engenharia de Software", "Arquitetura de Computadores I", "Física II"] },
-    { semester: 5, subjects: ["Estruturas de Linguagens", "Banco de Dados I", "Otimização em Grafos", "Análise e Proj. de Sistemas", "Sistemas Operacionais I", "Arquitetura de Computadores II", "Eletiva Básica"] },
-    { semester: 6, subjects: ["Otimização Combinatória", "Banco de Dados II", "Interfaces Humano-Comp.", "Eletiva I", "Sistemas Operacionais II", "Compiladores"] },
-    { semester: 7, subjects: ["Computação Gráfica", "Inteligência Artificial", "Ética Comp. e Sociedade", "Metod. Cient. no Projeto Final", "Redes de Computadores I", "Arq. Avançadas de Computadores"] },
-    { semester: 8, subjects: ["Eletiva II", "Eletiva III", "Projeto Final", "Sistemas Distribuídos", "Eletiva IV"] },
-];
-
 interface TeacherRateClientProps {
   initialSubjectsData: Subject[];
 }
@@ -68,12 +57,15 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
   };
 
   const filteredSubjects = useMemo(() => {
+    const sortedSubjects = [...initialSubjectsData].sort((a, b) => a.name.localeCompare(b.name));
+
     if (!searchQuery) {
-      return initialSubjectsData;
+      return sortedSubjects;
     }
+
     const lowercasedQuery = searchQuery.toLowerCase();
     
-    return initialSubjectsData.map(subject => {
+    return sortedSubjects.map(subject => {
         if (subject.name.toLowerCase().includes(lowercasedQuery)) {
             return subject;
         }
