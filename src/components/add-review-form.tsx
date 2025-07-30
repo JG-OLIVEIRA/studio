@@ -21,10 +21,10 @@ import { cn } from "@/lib/utils"
 const reviewSchema = z.object({
   author: z.string().min(2, "Name must be at least 2 characters."),
   text: z.string().min(10, "Review must be at least 10 characters."),
-  rating: z.number().min(1).max(5),
+  rating: z.number().min(1, "Rating is required.").max(5),
 })
 
-type ReviewFormValues = z.infer<typeof reviewSchema>
+export type ReviewFormValues = z.infer<typeof reviewSchema>
 
 interface AddReviewFormProps {
   onSubmit: (data: ReviewFormValues) => void;
@@ -110,7 +110,7 @@ export function AddReviewForm({ onSubmit, onClose }: AddReviewFormProps) {
             </FormItem>
           )}
         />
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
             <Button type="submit">Submit Review</Button>
         </div>

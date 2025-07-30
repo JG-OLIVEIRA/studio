@@ -1,6 +1,11 @@
-import { BookOpen, FlaskConical, Palette, ScrollText, Sigma, GraduationCap } from 'lucide-react';
-import type { Subject } from '@/lib/types';
+'use client';
+
+import { useState } from 'react';
+import { BookOpen, FlaskConical, Palette, ScrollText, Sigma, GraduationCap, PlusCircle } from 'lucide-react';
+import type { Subject, Teacher } from '@/lib/types';
 import SubjectSection from '@/components/subject-section';
+import { Button } from '@/components/ui/button';
+import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dialog';
 
 // ============================================================================
 // DATABASE CONFIGURATION
@@ -10,7 +15,7 @@ import SubjectSection from '@/components/subject-section';
 // Replace this with your actual data fetching logic (e.g., from Firebase,
 // Supabase, or your own backend API).
 // ============================================================================
-const subjectsData: Subject[] = [
+const initialSubjectsData: Subject[] = [
   {
     name: 'Mathematics',
     icon: Sigma,
@@ -98,8 +103,61 @@ const subjectsData: Subject[] = [
 // END OF DATABASE CONFIGURATION
 // ============================================================================
 
-
 export default function Home() {
+  const [subjectsData, setSubjectsData] = useState<Subject[]>(initialSubjectsData);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const allTeachers = subjectsData.flatMap(s => s.teachers.map(t => ({ ...t, subject: s.name })));
+  const allSubjectNames = subjectsData.map(s => s.name);
+
+  const handleAddTeacherOrReview = (data: {
+    teacherName: string;
+    subjectName: string;
+    reviewAuthor: string;
+    reviewText: string;
+    reviewRating: number;
+  }) => {
+    setSubjectsData(prevSubjects => {
+      const subjectsCopy = JSON.parse(JSON.stringify(prevSubjects));
+      const subjectIndex = subjectsCopy.findIndex((s: Subject) => s.name === data.subjectName);
+
+      if (subjectIndex === -1) {
+        // This case should ideally be handled by the form validation (e.g., creating a new subject)
+        // For now, we'll log an error.
+        console.error("Subject not found, and creating new subjects is not implemented.");
+        return prevSubjects;
+      }
+      
+      const subject = subjectsCopy[subjectIndex];
+      let teacher = subject.teachers.find((t: Teacher) => t.name.toLowerCase() === data.teacherName.toLowerCase());
+
+      const newReview = {
+        id: Date.now(),
+        author: data.reviewAuthor,
+        rating: data.reviewRating,
+        text: data.reviewText,
+      };
+
+      if (teacher) {
+        // Add review to existing teacher
+        teacher.reviews.push(newReview);
+      } else {
+        // Add new teacher with the first review
+        const newTeacher: Teacher = {
+          id: Date.now(),
+          name: data.teacherName,
+          reviews: [newReview],
+        };
+        subject.teachers.push(newTeacher);
+      }
+
+      return subjectsCopy;
+    });
+
+    setIsDialogOpen(false);
+  };
+
+
   return (
     <main className="min-h-screen w-full bg-background font-sans">
       <div className="container mx-auto px-4 py-8 sm:py-12">
@@ -114,6 +172,21 @@ export default function Home() {
             Discover the best teachers, reviewed by students like you.
           </p>
         </header>
+
+        <div className="flex justify-center mb-8">
+            <AddTeacherOrReviewDialog
+                allTeachers={allTeachers}
+                allSubjectNames={allSubjectNames}
+                onSubmit={handleAddTeacherOrReview}
+                open={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+            >
+                <Button size="lg" onClick={() => setIsDialogOpen(true)}>
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Adicionar Professor ou Avaliação
+                </Button>
+            </AddTeacherOrReviewDialog>
+        </div>
 
         <div className="space-y-16">
           {subjectsData.map((subject) => (
