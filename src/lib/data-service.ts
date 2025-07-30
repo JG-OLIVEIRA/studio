@@ -73,9 +73,14 @@ async function initializeDatabase() {
                     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
                     teacher_id INTEGER NOT NULL,
                     upvotes INTEGER NOT NULL DEFAULT 0,
-                    downvotes INTEGER NOT NULL DEFAULT 0,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+                    downvotes INTEGER NOT NULL DEFAULT 0
                 );
+            `);
+            
+            // Adiciona a coluna created_at se ela não existir
+            await client.query(`
+                ALTER TABLE reviews 
+                ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL;
             `);
 
             // Garante as constraints de ON DELETE CASCADE
