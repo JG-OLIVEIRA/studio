@@ -10,6 +10,7 @@ import AIReviewInsights from './ai-review-insights';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { AddReviewForm, type ReviewFormValues } from './add-review-form';
+import { handleAddTeacherOrReview } from '@/app/actions';
 
 interface TeacherCardProps {
   teacher: Teacher;
@@ -24,22 +25,14 @@ export default function TeacherCard({ teacher, onReviewAdded }: TeacherCardProps
       console.error("A matéria do professor não foi definida. Não é possível adicionar avaliação.");
       return;
     }
-
-    // Since addTeacherOrReview is a server action, it needs to be called from an async function.
-    // We are wrapping the original DataService.addTeacherOrReview call to make it a server action.
-    const addReviewAction = async (formData: typeof data) => {
-        'use server';
-        const { addTeacherOrReview } = await import('@/lib/data-service');
-        await addTeacherOrReview({
-            teacherName: teacher.name,
-            subjectName: teacher.subject!,
-            reviewAuthor: formData.author,
-            reviewText: formData.text,
-            reviewRating: formData.rating,
-        });
-    }
     
-    await addReviewAction(data);
+    await handleAddTeacherOrReview({
+        teacherName: teacher.name,
+        subjectName: teacher.subject!,
+        reviewAuthor: data.author,
+        reviewText: data.text,
+        reviewRating: data.rating,
+    });
 
     setIsReviewOpen(false);
     onReviewAdded(); // Call the callback to trigger data refetch in the parent

@@ -21,9 +21,6 @@ export default function SubjectSection({ subject, onUpdate }: SubjectSectionProp
       averageRating: calculateAverageRating(teacher),
     }))
     .sort((a, b) => {
-      // Teachers with no reviews go to the end
-      if (a.reviews.length === 0 && b.reviews.length > 0) return 1;
-      if (b.reviews.length === 0 && a.reviews.length > 0) return -1;
       // Then sort by average rating
       return b.averageRating - a.averageRating;
     });
