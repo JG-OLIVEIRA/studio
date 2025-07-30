@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, type ReactNode } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,7 +19,6 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription,
-    DialogTrigger,
   } from './ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,13 +26,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Teacher } from '@/lib/types';
+import { Combobox } from './ui/combobox';
 
 const formSchema = z.object({
-  teacherName: z.string().min(2, "Teacher name must be at least 2 characters."),
-  subjectName: z.string().min(1, "Please select a subject."),
-  reviewAuthor: z.string().min(2, "Your name must be at least 2 characters."),
-  reviewText: z.string().min(10, "Review must be at least 10 characters."),
-  reviewRating: z.number().min(1, "Rating is required.").max(5),
+  teacherName: z.string().min(2, "O nome do professor deve ter pelo menos 2 caracteres."),
+  subjectName: z.string().min(1, "Por favor, selecione ou crie uma matéria."),
+  reviewAuthor: z.string().min(2, "Seu nome deve ter pelo menos 2 caracteres."),
+  reviewText: z.string().min(10, "A avaliação deve ter pelo menos 10 caracteres."),
+  reviewRating: z.number().min(1, "A nota é obrigatória.").max(5),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -56,6 +56,10 @@ export function AddTeacherOrReviewDialog({
     onOpenChange 
 }: AddTeacherOrReviewDialogProps) {
   const [hoverRating, setHoverRating] = useState(0);
+
+  const subjectOptions = useMemo(() => {
+    return allSubjectNames.map(name => ({ value: name, label: name }));
+  }, [allSubjectNames]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -88,11 +92,11 @@ export function AddTeacherOrReviewDialog({
         {children}
         <DialogContent>
             <DialogHeader>
-            <DialogTitle>{teacherExists ? `Add a review for ${teacherName}` : `Add a new teacher`}</DialogTitle>
+            <DialogTitle>{teacherExists ? `Adicionar avaliação para ${teacherName}` : `Adicionar novo professor`}</DialogTitle>
             <DialogDescription>
                 {teacherExists 
-                    ? `This teacher is already in our database. Please add your review below.`
-                    : `This teacher is not in our database yet. Add their details and your first review!`}
+                    ? `Este professor já está em nosso banco de dados. Por favor, adicione sua avaliação abaixo.`
+                    : `Este professor ainda não está em nosso banco de dados. Adicione os detalhes e sua primeira avaliação!`}
             </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -103,9 +107,9 @@ export function AddTeacherOrReviewDialog({
                         name="teacherName"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Teacher's Name</FormLabel>
+                            <FormLabel>Nome do Professor</FormLabel>
                             <FormControl>
-                                <Input placeholder="e.g., Mr. Smith" {...field} />
+                                <Input placeholder="ex: Sr. Smith" {...field} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
@@ -116,19 +120,14 @@ export function AddTeacherOrReviewDialog({
                         name="subjectName"
                         render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Subject</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a subject" />
-                                </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                {allSubjectNames.map(name => (
-                                    <SelectItem key={name} value={name}>{name}</SelectItem>
-                                ))}
-                                </SelectContent>
-                            </Select>
+                            <FormLabel>Matéria</FormLabel>
+                            <Combobox
+                                options={subjectOptions}
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="Selecione ou crie..."
+                                createLabel="Criar matéria:"
+                            />
                             <FormMessage />
                         </FormItem>
                         )}
@@ -140,9 +139,9 @@ export function AddTeacherOrReviewDialog({
                     name="reviewAuthor"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Your Name</FormLabel>
+                        <FormLabel>Seu Nome</FormLabel>
                         <FormControl>
-                            <Input placeholder="e.g., Jane Doe" {...field} />
+                            <Input placeholder="ex: Joana da Silva" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -153,10 +152,10 @@ export function AddTeacherOrReviewDialog({
                     name="reviewText"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Review</FormLabel>
+                        <FormLabel>Avaliação</FormLabel>
                         <FormControl>
                             <Textarea
-                            placeholder="Share your experience with this teacher..."
+                            placeholder="Compartilhe sua experiência com este professor..."
                             {...field}
                             />
                         </FormControl>
@@ -169,7 +168,7 @@ export function AddTeacherOrReviewDialog({
                     name="reviewRating"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Rating</FormLabel>
+                        <FormLabel>Nota</FormLabel>
                         <FormControl>
                             <div className="flex items-center gap-1">
                             {[...Array(5)].map((_, index) => {
@@ -188,7 +187,7 @@ export function AddTeacherOrReviewDialog({
                                         'h-6 w-6 cursor-pointer',
                                         ratingValue <= (hoverRating || field.value)
                                         ? 'text-primary fill-current'
-                                        : 'text-muted/50'
+                                        : 'text-muted-foreground/50'
                                     )}
                                     />
                                 </button>
@@ -201,8 +200,8 @@ export function AddTeacherOrReviewDialog({
                     )}
                 />
                 <div className="flex justify-end gap-2 pt-4">
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button type="submit">Submit</Button>
+                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button type="submit">Enviar</Button>
                 </div>
             </form>
             </Form>

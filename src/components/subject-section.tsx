@@ -14,6 +14,19 @@ const calculateAverageRating = (teacher: Teacher) => {
 
 
 export default function SubjectSection({ subject }: SubjectSectionProps) {
+  const sortedTeachers = subject.teachers
+    .map(teacher => ({
+      ...teacher,
+      averageRating: calculateAverageRating(teacher),
+    }))
+    .sort((a, b) => {
+      // Teachers with no reviews go to the end
+      if (a.reviews.length === 0 && b.reviews.length > 0) return 1;
+      if (b.reviews.length === 0 && a.reviews.length > 0) return -1;
+      // Then sort by average rating
+      return b.averageRating - a.averageRating;
+    });
+
   return (
     <section aria-labelledby={`subject-title-${subject.name.replace(/\s+/g, '-')}`}>
       <Card className="overflow-hidden bg-card/80 backdrop-blur-sm">
@@ -25,13 +38,7 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
         </CardHeader>
         <CardContent className="p-4 md:p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {subject.teachers
-              .map(teacher => ({
-                ...teacher,
-                averageRating: calculateAverageRating(teacher),
-              }))
-              .sort((a, b) => b.averageRating - a.averageRating)
-              .map((teacher) => (
+            {sortedTeachers.map((teacher) => (
               <TeacherCard
                 key={teacher.id}
                 teacher={{...teacher, subject: subject.name}}

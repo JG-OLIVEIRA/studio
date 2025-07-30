@@ -19,9 +19,9 @@ import { Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const reviewSchema = z.object({
-  author: z.string().min(2, "Name must be at least 2 characters."),
-  text: z.string().min(10, "Review must be at least 10 characters."),
-  rating: z.number().min(1, "Rating is required.").max(5),
+  author: z.string().min(2, "O nome deve ter pelo menos 2 caracteres."),
+  text: z.string().min(10, "A avaliação deve ter pelo menos 10 caracteres."),
+  rating: z.number().min(1, "A nota é obrigatória.").max(5),
 })
 
 export type ReviewFormValues = z.infer<typeof reviewSchema>
@@ -50,9 +50,9 @@ export function AddReviewForm({ onSubmit, onClose }: AddReviewFormProps) {
           name="author"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Your Name</FormLabel>
+              <FormLabel>Seu Nome</FormLabel>
               <FormControl>
-                <Input placeholder="John Doe" {...field} />
+                <Input placeholder="João da Silva" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -63,10 +63,10 @@ export function AddReviewForm({ onSubmit, onClose }: AddReviewFormProps) {
           name="text"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Your Review</FormLabel>
+              <FormLabel>Sua Avaliação</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Tell us what you think about this teacher..."
+                  placeholder="Conte-nos o que você acha deste professor..."
                   {...field}
                 />
               </FormControl>
@@ -79,7 +79,7 @@ export function AddReviewForm({ onSubmit, onClose }: AddReviewFormProps) {
           name="rating"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Rating</FormLabel>
+              <FormLabel>Nota</FormLabel>
               <FormControl>
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, index) => {
@@ -98,7 +98,7 @@ export function AddReviewForm({ onSubmit, onClose }: AddReviewFormProps) {
                             "h-6 w-6 cursor-pointer",
                             ratingValue <= (hoverRating || field.value)
                               ? "text-primary fill-current"
-                              : "text-muted/50"
+                              : "text-muted-foreground/50"
                           )}
                         />
                       </button>
@@ -111,8 +111,8 @@ export function AddReviewForm({ onSubmit, onClose }: AddReviewFormProps) {
           )}
         />
         <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Submit Review</Button>
+            <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+            <Button type="submit">Enviar Avaliação</Button>
         </div>
       </form>
     </Form>

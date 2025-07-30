@@ -37,6 +37,8 @@ export default function TeacherCard({ teacher: initialTeacher }: TeacherCardProp
     setIsReviewOpen(false);
   }
 
+  const hasReviews = teacher.reviews.length > 0;
+
   return (
     <Card
       className={cn(
@@ -49,27 +51,29 @@ export default function TeacherCard({ teacher: initialTeacher }: TeacherCardProp
       <CardContent className="flex-grow">
         <div className="flex items-center gap-2">
           <StarRating rating={averageRating} />
-          <span className="text-sm font-bold text-muted-foreground">{averageRating.toFixed(1)}</span>
+          {hasReviews && <span className="text-sm font-bold text-muted-foreground">{averageRating.toFixed(1)}</span>}
         </div>
-         <p className="text-sm text-muted-foreground mt-2">{teacher.reviews.length} reviews</p>
+         <p className="text-sm text-muted-foreground mt-2">
+          {hasReviews ? `${teacher.reviews.length} avaliações` : "Nenhuma avaliação ainda"}
+        </p>
       </CardContent>
       <CardFooter className="flex-col items-stretch gap-2">
-        <AIReviewInsights teacher={teacher}>
-          <Button variant="secondary" className="w-full">
+        <AIReviewInsights teacher={teacher} disabled={!hasReviews}>
+          <Button variant="secondary" className="w-full" disabled={!hasReviews}>
             <Sparkles className="mr-2 h-4 w-4" />
-            AI Insights
+            Insights de IA
           </Button>
         </AIReviewInsights>
         <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
             <Button onClick={() => setIsReviewOpen(true)} className="w-full">
                 <MessageSquarePlus className="mr-2 h-4 w-4" />
-                Add Review
+                Adicionar Avaliação
             </Button>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Add a review for {teacher.name}</DialogTitle>
+                    <DialogTitle>Adicionar avaliação para {teacher.name}</DialogTitle>
                     <DialogDescription>
-                        Share your experience to help others.
+                        Compartilhe sua experiência para ajudar os outros.
                     </DialogDescription>
                 </DialogHeader>
                 <AddReviewForm 

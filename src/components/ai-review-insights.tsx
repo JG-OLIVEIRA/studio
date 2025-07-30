@@ -14,13 +14,15 @@ import { getAIInsights } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Teacher } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
+import { Button } from './ui/button';
 
 interface AIReviewInsightsProps {
   teacher: Teacher;
   children: ReactNode;
+  disabled: boolean;
 }
 
-export default function AIReviewInsights({ teacher, children }: AIReviewInsightsProps) {
+export default function AIReviewInsights({ teacher, children, disabled }: AIReviewInsightsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [insights, setInsights] = useState<string | null>(null);
@@ -28,6 +30,7 @@ export default function AIReviewInsights({ teacher, children }: AIReviewInsights
   const { toast } = useToast();
 
   const handleOpenChange = async (open: boolean) => {
+    if (disabled) return;
     setIsOpen(open);
     if (open && !insights) {
       setIsLoading(true);
@@ -35,16 +38,16 @@ export default function AIReviewInsights({ teacher, children }: AIReviewInsights
       try {
         const result = await getAIInsights({
           teacherName: teacher.name,
-          subject: teacher.subject || 'General',
+          subject: teacher.subject || 'Geral',
           reviews: teacher.reviews.map(r => r.text),
         });
         setInsights(result.insights);
       } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+        const errorMessage = e instanceof Error ? e.message : 'Ocorreu um erro desconhecido.';
         setError(errorMessage);
         toast({
           variant: 'destructive',
-          title: 'Error Generating Insights',
+          title: 'Erro ao Gerar Insights',
           description: errorMessage,
         });
       } finally {
@@ -60,10 +63,10 @@ export default function AIReviewInsights({ teacher, children }: AIReviewInsights
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            AI-Powered Review Insights
+            Análise de Avaliações por IA
           </DialogTitle>
           <DialogDescription>
-            An AI-generated summary of student feedback for {teacher.name}.
+            Um resumo gerado por IA do feedback dos alunos para {teacher.name}.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
