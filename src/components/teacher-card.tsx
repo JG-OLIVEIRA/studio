@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -8,9 +9,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import StarRating from './star-rating';
 import AIReviewInsights from './ai-review-insights';
 import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
-import { AddReviewForm, type ReviewFormValues } from './add-review-form';
-import { handleAddTeacherOrReview } from '@/app/actions';
+import { Dialog } from './ui/dialog';
+import { AddReviewForm } from './add-review-form';
 import { ViewReviewsDialog } from './view-reviews-dialog';
 
 interface TeacherCardProps {
@@ -19,23 +19,7 @@ interface TeacherCardProps {
 }
 
 export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCardProps) {
-  const [isReviewOpen, setIsReviewOpen] = useState(false);
-
-  const handleAddReview = async (data: ReviewFormValues) => {
-    if (!teacher.subject) {
-      console.error("A matéria do professor não foi definida. Não é possível adicionar avaliação.");
-      return;
-    }
-    
-    await handleAddTeacherOrReview({
-        teacherName: teacher.name,
-        subjectName: teacher.subject!,
-        reviewText: data.text,
-        reviewRating: data.rating,
-    });
-
-    setIsReviewOpen(false);
-  }
+  const [isAddReviewOpen, setIsAddReviewOpen] = useState(false);
 
   const averageRating = useMemo(() => {
     if (teacher.reviews.length === 0) return 0;
@@ -80,24 +64,16 @@ export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCa
             </Button>
         </ViewReviewsDialog>
 
-        <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-            <Button onClick={() => setIsReviewOpen(true)} className="w-full col-span-2">
-                <MessageSquarePlus className="mr-2 h-4 w-4" />
-                Adicionar Avaliação
-            </Button>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Adicionar avaliação para {teacher.name}</DialogTitle>
-                    <DialogDescription>
-                        Compartilhe sua experiência para ajudar os outros.
-                    </DialogDescription>
-                </DialogHeader>
-                <AddReviewForm 
-                    onSubmit={handleAddReview} 
-                    onClose={() => setIsReviewOpen(false)}
-                />
-            </DialogContent>
-        </Dialog>
+        <AddReviewForm 
+          teacher={teacher}
+          open={isAddReviewOpen}
+          onOpenChange={setIsAddReviewOpen}
+        >
+          <Button onClick={() => setIsAddReviewOpen(true)} className="w-full col-span-2">
+            <MessageSquarePlus className="mr-2 h-4 w-4" />
+            Adicionar Avaliação
+          </Button>
+        </AddReviewForm>
       </CardFooter>
     </Card>
   );
