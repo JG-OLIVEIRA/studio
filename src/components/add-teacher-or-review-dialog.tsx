@@ -26,10 +26,11 @@ import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Teacher } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Input } from './ui/input';
 
 const formSchema = z.object({
   teacherName: z.string().trim()
-    .min(1, "É necessário selecionar um professor."),
+    .min(3, "O nome do professor deve ter pelo menos 3 caracteres."),
   subjectName: z.string().trim()
     .min(1, "É necessário selecionar uma matéria."),
   reviewText: z.string().trim()
@@ -70,26 +71,11 @@ export function AddTeacherOrReviewDialog({
   });
 
   const subjectName = useWatch({ control: form.control, name: 'subjectName' });
-  const teacherName = useWatch({ control: form.control, name: 'teacherName' });
 
   const subjectOptions = useMemo(() => {
     return allSubjectNames.map(name => ({ value: name, label: name }));
   }, [allSubjectNames]);
 
-  const teacherOptions = useMemo(() => {
-    if (!subjectName) return [];
-    return allTeachers
-        .filter(t => t.subject.toLowerCase() === subjectName.toLowerCase())
-        .map(t => ({ value: t.name, label: t.name }));
-  }, [subjectName, allTeachers]);
-
-
-  const teacherExists = useMemo(() => {
-    if (!teacherName || !subjectName) return false;
-    return allTeachers.some(
-      (t) => t.name.toLowerCase() === teacherName.toLowerCase() && t.subject.toLowerCase() === subjectName.toLowerCase()
-    );
-  }, [teacherName, subjectName, allTeachers]);
 
   const handleSubmit = (values: FormValues) => {
     onSubmit(values);
@@ -110,7 +96,7 @@ export function AddTeacherOrReviewDialog({
             <DialogHeader>
             <DialogTitle>Adicionar nova avaliação</DialogTitle>
             <DialogDescription>
-                Selecione a matéria e o professor para adicionar sua avaliação. Não é mais possível adicionar novos professores ou matérias.
+                Selecione a matéria e informe o nome do professor. Se o professor não existir na matéria, ele será criado.
             </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -122,10 +108,7 @@ export function AddTeacherOrReviewDialog({
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel>Matéria</FormLabel>
-                             <Select onValueChange={(value) => {
-                                 field.onChange(value);
-                                 form.setValue('teacherName', '');
-                             }} value={field.value}>
+                             <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecione a matéria" />
@@ -146,20 +129,11 @@ export function AddTeacherOrReviewDialog({
                         name="teacherName"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Nome do Professor</FormLabel>
-                             <Select onValueChange={field.onChange} value={field.value} disabled={!subjectName}>
+                                <FormLabel>Nome do Professor</FormLabel>
                                 <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder={subjectName ? "Selecione o professor" : "Escolha uma matéria"} />
-                                    </SelectTrigger>
+                                    <Input placeholder="Ex: João da Silva" {...field} />
                                 </FormControl>
-                                <SelectContent>
-                                    {teacherOptions.map(option => (
-                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                             </Select>
-                            <FormMessage />
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
