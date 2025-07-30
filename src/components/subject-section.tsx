@@ -44,36 +44,32 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
 
   return (
     <section aria-labelledby={`subject-title-${subject.id}`}>
-      <Card className="overflow-hidden bg-card/80 backdrop-blur-sm border-secondary">
-        <CardHeader className="bg-muted/50 border-b border-secondary">
-          <div className="flex items-center justify-between">
-            <CardTitle id={`subject-title-${subject.id}`} className="flex items-center gap-3 text-2xl font-semibold">
+        <div className="flex items-center justify-between mb-4">
+            <h2 id={`subject-title-${subject.id}`} className="flex items-center gap-3 text-2xl font-semibold text-foreground">
               <Icon className="h-6 w-6 text-primary" />
               {subject.name}
-            </CardTitle>
+            </h2>
             <EditSubjectDialog subject={subject}>
                 <button className="p-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                     <Pencil className="h-4 w-4" />
                 </button>
             </EditSubjectDialog>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 md:p-6">
-          {sortedTeachers.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {sortedTeachers.map((teacher, index) => (
-                <TeacherCard
-                  key={teacher.id}
-                  teacher={{...teacher, subject: subject.name}}
-                  isTopTeacher={index === 0 && teacher.averageRating >= 4}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-4">Nenhum professor cadastrado nesta matéria ainda.</p>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+        <div className="pl-9">
+            {sortedTeachers.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {sortedTeachers.map((teacher, index) => (
+                    <TeacherCard
+                    key={teacher.id}
+                    teacher={{...teacher, subject: subject.name}}
+                    isTopTeacher={index === 0 && teacher.averageRating >= 4 && teacher.reviews.length > 0}
+                    />
+                ))}
+                </div>
+            ) : (
+                <p className="text-muted-foreground text-center py-4 border rounded-lg bg-card">Nenhum professor cadastrado nesta matéria ainda.</p>
+            )}
+        </div>
     </section>
   );
 }

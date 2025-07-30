@@ -11,6 +11,17 @@ import { handleAddTeacherOrReview } from '@/app/actions';
 import { Input } from '@/components/ui/input';
 import CourseFlowchart from './course-flowchart';
 
+const flowchartData = [
+    { semester: 1, subjects: ["Geometria Analítica", "Cálculo I", "Álgebra", "Matemática Discreta", "Fundamentos da Computação"] },
+    { semester: 2, subjects: ["Álgebra Linear", "Cálculo II", "Cálculo das Probabilidades", "Algoritmos e Est. de Dados I", "Linguagem de Programação I", "Física I"] },
+    { semester: 3, subjects: ["Português Instrumental", "Cálculo III", "Algoritmos e Est. de Dados II", "Elementos de Lógica", "Linguagem de Programação II", "Teoria da Computação"] },
+    { semester: 4, subjects: ["Cálculo Numérico", "Cálculo IV", "Algoritmos em Grafos", "Engenharia de Software", "Arquitetura de Computadores I", "Física II"] },
+    { semester: 5, subjects: ["Estruturas de Linguagens", "Banco de Dados I", "Otimização em Grafos", "Análise e Proj. de Sistemas", "Sistemas Operacionais I", "Arquitetura de Computadores II", "Eletiva Básica"] },
+    { semester: 6, subjects: ["Otimização Combinatória", "Banco de Dados II", "Interfaces Humano-Comp.", "Eletiva I", "Sistemas Operacionais II", "Compiladores"] },
+    { semester: 7, subjects: ["Computação Gráfica", "Inteligência Artificial", "Ética Comp. e Sociedade", "Metod. Cient. no Projeto Final", "Redes de Computadores I", "Arq. Avançadas de Computadores"] },
+    { semester: 8, subjects: ["Eletiva II", "Eletiva III", "Projeto Final", "Sistemas Distribuídos", "Eletiva IV"] },
+];
+
 interface TeacherRateClientProps {
   initialSubjectsData: Subject[];
 }
@@ -47,25 +58,42 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
     }
   };
 
-  const filteredSubjects = useMemo(() => {
-    if (!searchQuery) {
-      return initialSubjectsData;
-    }
+  const filteredSemesters = useMemo(() => {
     const lowercasedQuery = searchQuery.toLowerCase();
     
-    return initialSubjectsData.map(subject => {
-      if (subject.name.toLowerCase().includes(lowercasedQuery)) {
-        return subject;
-      }
-      const matchingTeachers = subject.teachers.filter(teacher =>
-        teacher.name.toLowerCase().includes(lowercasedQuery)
-      );
-      if (matchingTeachers.length > 0) {
-        return { ...subject, teachers: matchingTeachers };
-      }
-      return null;
-    }).filter((s): s is Subject => s !== null);
+    return flowchartData.map(semester => {
+        const subjectsInSemester = initialSubjectsData.filter(dbSub => 
+            semester.subjects.some(flowSub => flowSub.toLowerCase() === dbSub.name.toLowerCase())
+        );
 
+        let filteredSubjectsInSemester = subjectsInSemester;
+
+        if (searchQuery) {
+            filteredSubjectsInSemester = subjectsInSemester.map(subject => {
+                if (subject.name.toLowerCase().includes(lowercasedQuery)) {
+                    return subject;
+                }
+                const matchingTeachers = subject.teachers.filter(teacher =>
+                    teacher.name.toLowerCase().includes(lowercasedQuery)
+                );
+                if (matchingTeachers.length > 0) {
+                    return { ...subject, teachers: matchingTeachers };
+                }
+                return null;
+            }).filter((s): s is Subject => s !== null);
+        }
+        
+        return {
+            ...semester,
+            subjects: filteredSubjectsInSemester,
+        };
+    }).filter(semester => semester.subjects.length > 0);
+  }, [initialSubjectsData, searchQuery]);
+
+  const subjectsWithoutSemester = useMemo(() => {
+     if (searchQuery) return []; // Don't show "extras" when searching
+     const allSemesterSubjects = new Set(flowchartData.flatMap(s => s.subjects.map(sub => sub.toLowerCase())));
+     return initialSubjectsData.filter(s => !allSemesterSubjects.has(s.name.toLowerCase()));
   }, [initialSubjectsData, searchQuery]);
 
   return (
@@ -98,10 +126,17 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
         </AddTeacherOrReviewDialog>
       </div>
 
-      <div className="space-y-16">
-        {filteredSubjects.length > 0 ? (
-          filteredSubjects.map((subject) => (
-            <SubjectSection key={subject.id} subject={subject} />
+      <div className="space-y-12">
+        {filteredSemesters.length > 0 ? (
+          filteredSemesters.map((semester) => (
+            <div key={semester.semester}>
+              <h2 className="text-2xl font-bold mb-6 border-b pb-2">{semester.semester}º Período</h2>
+              <div className="space-y-10">
+                {semester.subjects.map((subject) => (
+                  <SubjectSection key={subject.id} subject={subject} />
+                ))}
+              </div>
+            </div>
           ))
         ) : (
             <div className="text-center text-muted-foreground py-12">
@@ -116,6 +151,17 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
                         <p className="mt-2 text-sm">Seja o primeiro a adicionar um professor e uma matéria!</p>
                     </>
                 )}
+            </div>
+        )}
+        
+        {subjectsWithoutSemester.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold mb-6 border-b pb-2">Outras Disciplinas</h2>
+              <div className="space-y-10">
+                {subjectsWithoutSemester.map((subject) => (
+                  <SubjectSection key={subject.id} subject={subject} />
+                ))}
+              </div>
             </div>
         )}
       </div>

@@ -31,7 +31,7 @@ export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCa
   return (
     <Card
       className={cn(
-        'flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-background/50',
+        'flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-card',
         isTopTeacher && 'border-primary border-2 shadow-primary/20'
       )}
     >
@@ -48,18 +48,18 @@ export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCa
           {hasReviews ? `${teacher.reviews.length} avaliações` : "Nenhuma avaliação ainda"}
         </p>
       </CardContent>
-      <CardFooter className="grid grid-cols-2 gap-2">
+      <CardFooter className="grid grid-cols-2 gap-2 pt-4">
         <AIReviewInsights teacher={teacher} disabled={!hasReviews}>
-          <Button variant="secondary" className="w-full" disabled={!hasReviews}>
+          <Button variant="outline" className="w-full" disabled={!hasReviews}>
             <Sparkles className="mr-2 h-4 w-4" />
-            IA
+            Análise IA
           </Button>
         </AIReviewInsights>
         
         <ViewReviewsDialog teacher={teacher} disabled={!hasReviews}>
-            <Button variant="secondary" className="w-full" disabled={!hasReviews}>
+            <Button variant="outline" className="w-full" disabled={!hasReviews}>
                 <Eye className="mr-2 h-4 w-4" />
-                Ver
+                Ver Avaliações
             </Button>
         </ViewReviewsDialog>
 
