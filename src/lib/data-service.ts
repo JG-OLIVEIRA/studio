@@ -6,19 +6,18 @@
  */
 import 'server-only';
 import type { Subject, Teacher, Review } from './types';
-import { BookOpen, FlaskConical, Palette, ScrollText, Sigma, GraduationCap } from 'lucide-react';
 import { pool } from './db';
 
-const iconMap = {
-    'Matemática': Sigma,
-    'Ciências': FlaskConical,
-    'História': ScrollText,
-    'Literatura': BookOpen,
-    'Arte': Palette,
+const iconNameMap: Record<string, string> = {
+    'Matemática': 'Sigma',
+    'Ciências': 'FlaskConical',
+    'História': 'ScrollText',
+    'Literatura': 'BookOpen',
+    'Arte': 'Palette',
 };
 
-function assignIcon(subjectName: string) {
-    return iconMap[subjectName as keyof typeof iconMap] || GraduationCap;
+function assignIconName(subjectName: string): string {
+    return iconNameMap[subjectName] || 'GraduationCap';
 }
 
 /**
@@ -103,7 +102,7 @@ export async function getSubjects(): Promise<Subject[]> {
 
     const subjects: Subject[] = subjectsResult.rows.map(subject => ({
       name: subject.name,
-      icon: assignIcon(subject.name),
+      iconName: assignIconName(subject.name),
       teachers: teachersBySubjectId[subject.id] || [],
     }));
 

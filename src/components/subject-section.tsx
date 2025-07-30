@@ -1,10 +1,10 @@
+import * as LucideIcons from 'lucide-react';
 import type { Subject, Teacher } from '@/lib/types';
 import TeacherCard from '@/components/teacher-card';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface SubjectSectionProps {
   subject: Subject;
-  onUpdate: () => void; // Callback to trigger data refetch
 }
 
 const calculateAverageRating = (teacher: Teacher) => {
@@ -13,8 +13,14 @@ const calculateAverageRating = (teacher: Teacher) => {
   return total / teacher.reviews.length;
 };
 
+// Helper to get the icon component from its name string
+const getIconComponent = (iconName: string): React.ElementType => {
+  const IconComponent = (LucideIcons as any)[iconName];
+  return IconComponent || LucideIcons.GraduationCap;
+};
 
-export default function SubjectSection({ subject, onUpdate }: SubjectSectionProps) {
+
+export default function SubjectSection({ subject }: SubjectSectionProps) {
   const sortedTeachers = subject.teachers
     .map(teacher => ({
       ...teacher,
@@ -25,25 +31,30 @@ export default function SubjectSection({ subject, onUpdate }: SubjectSectionProp
       return b.averageRating - a.averageRating;
     });
 
+  const Icon = getIconComponent(subject.iconName);
+
   return (
     <section aria-labelledby={`subject-title-${subject.name.replace(/\s+/g, '-')}`}>
       <Card className="overflow-hidden bg-card/80 backdrop-blur-sm">
         <CardHeader className="bg-muted/50 border-b">
           <CardTitle id={`subject-title-${subject.name.replace(/\s+/g, '-')}`} className="flex items-center gap-3 text-2xl font-semibold">
-            <subject.icon className="h-6 w-6 text-primary" />
+            <Icon className="h-6 w-6 text-primary" />
             {subject.name}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 md:p-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {sortedTeachers.map((teacher) => (
-              <TeacherCard
-                key={teacher.id}
-                teacher={{...teacher, subject: subject.name}}
-                onReviewAdded={onUpdate}
-              />
-            ))}
-          </div>
+          {sortedTeachers.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {sortedTeachers.map((teacher) => (
+                <TeacherCard
+                  key={teacher.id}
+                  teacher={{...teacher, subject: subject.name}}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">Nenhum professor cadastrado nesta matéria ainda.</p>
+          )}
         </CardContent>
       </Card>
     </section>

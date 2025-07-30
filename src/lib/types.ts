@@ -16,6 +16,6 @@ export interface Teacher {
 
 export interface Subject {
   name: string;
-  icon: LucideIcon;
+  iconName: string;
   teachers: Teacher[];
 }

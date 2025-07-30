@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Sparkles, MessageSquarePlus } from 'lucide-react';
-import type { Teacher, Review } from '@/lib/types';
+import type { Teacher } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import StarRating from './star-rating';
@@ -14,10 +14,9 @@ import { handleAddTeacherOrReview } from '@/app/actions';
 
 interface TeacherCardProps {
   teacher: Teacher;
-  onReviewAdded: () => void; // Callback to notify parent about new review
 }
 
-export default function TeacherCard({ teacher, onReviewAdded }: TeacherCardProps) {
+export default function TeacherCard({ teacher }: TeacherCardProps) {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   const handleAddReview = async (data: ReviewFormValues) => {
@@ -35,7 +34,7 @@ export default function TeacherCard({ teacher, onReviewAdded }: TeacherCardProps
     });
 
     setIsReviewOpen(false);
-    onReviewAdded(); // Call the callback to trigger data refetch in the parent
+    // No need to call a callback anymore, revalidatePath in the server action handles updates.
   }
 
   const averageRating = useMemo(() => {
