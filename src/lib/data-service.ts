@@ -60,36 +60,12 @@ async function ensureDbTablesExist() {
 }
 
 /**
- * Executa uma limpeza única de todos os dados do banco de dados.
- */
-async function clearAllData() {
-    console.log("Iniciando a limpeza completa de todos os dados...");
-    const client = await pool.connect();
-    try {
-        // O comando TRUNCATE é rápido e eficiente para limpar tabelas.
-        // CASCADE remove dependências em outras tabelas (foreign keys).
-        // RESTART IDENTITY reinicia os contadores de ID.
-        await client.query('TRUNCATE TABLE reviews, teachers, subjects RESTART IDENTITY CASCADE;');
-        console.log("Limpeza completa de todos os dados concluída com sucesso.");
-    } catch (error) {
-        console.error("Erro durante a limpeza completa dos dados:", error);
-    } finally {
-        client.release();
-    }
-}
-
-
-/**
  * Busca todas as matérias, seus professores e avaliações do banco de dados.
  */
 export async function getSubjects(): Promise<Subject[]> {
   // Garante que as tabelas existem antes de tentar buscar os dados
   await ensureDbTablesExist();
   
-  // Roda a limpeza de todos os dados uma única vez.
-  // REMOVER ESTA LINHA APÓS A EXECUÇÃO.
-  await clearAllData();
-
   console.log("Buscando dados do banco de dados PostgreSQL...");
   const client = await pool.connect();
   try {
