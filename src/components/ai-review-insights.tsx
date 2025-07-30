@@ -33,7 +33,6 @@ export default function AIReviewInsights({ teacher, children, disabled }: AIRevi
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<InsightsData | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleOpenChange = async (open: boolean) => {
@@ -41,7 +40,6 @@ export default function AIReviewInsights({ teacher, children, disabled }: AIRevi
     setIsOpen(open);
     if (open && !data) {
       setIsLoading(true);
-      setError(null);
       try {
         const result = await getAIInsights({
           teacherName: teacher.name,
@@ -54,7 +52,10 @@ export default function AIReviewInsights({ teacher, children, disabled }: AIRevi
         });
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : 'Ocorreu um erro desconhecido.';
-        setError(errorMessage);
+        setData({
+            insights: `Ocorreu um erro ao gerar a análise: ${errorMessage}`,
+            passWithoutStudyingChance: 0
+        });
         toast({
           variant: 'destructive',
           title: 'Erro ao Gerar Insights',
@@ -90,20 +91,23 @@ export default function AIReviewInsights({ teacher, children, disabled }: AIRevi
               <Skeleton className="h-5 w-1/3" />
             </div>
           )}
-          {error && <p className="text-sm text-destructive">{error}</p>}
           {data && (
             <>
               <div className="prose prose-sm max-w-none text-foreground/90 flex items-start gap-3 rounded-lg border bg-secondary/50 p-4">
                  <Bot className="h-8 w-8 flex-shrink-0 text-primary mt-1" />
                  <p className="m-0">{data.insights}</p>
               </div>
-              <Separator />
-              <div className="text-center space-y-2">
-                <h4 className="font-semibold text-sm text-muted-foreground">Chance de Passar Sem Estudar™</h4>
-                <div className="flex justify-center">
-                    <StarRating rating={data.passWithoutStudyingChance} />
-                </div>
-              </div>
+              {data.passWithoutStudyingChance > 0 && (
+                <>
+                    <Separator />
+                    <div className="text-center space-y-2">
+                        <h4 className="font-semibold text-sm text-muted-foreground">Chance de Passar Sem Estudar™</h4>
+                        <div className="flex justify-center">
+                            <StarRating rating={data.passWithoutStudyingChance} />
+                        </div>
+                    </div>
+                </>
+              )}
             </>
           )}
         </div>

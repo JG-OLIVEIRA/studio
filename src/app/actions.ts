@@ -11,7 +11,11 @@ export async function getAIInsights(input: GenerateReviewInsightsInput): Promise
     return output;
   } catch (error) {
     console.error("Error generating review insights:", error);
-    throw new Error("Failed to generate AI insights. Please try again later.");
+    // Return a structured error response that the component can handle gracefully.
+    return {
+      insights: "A IA não conseguiu gerar uma análise para este professor no momento. Isso pode acontecer se as avaliações forem muito curtas ou por um problema temporário. Tente novamente mais tarde.",
+      passWithoutStudyingChance: 0, // Return a default/neutral value
+    };
   }
 }
 
