@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { PlusCircle, Search } from 'lucide-react';
 import type { Subject } from '@/lib/types';
 import SubjectSection from '@/components/subject-section';
@@ -15,6 +15,27 @@ import { Accordion } from '@/components/ui/accordion';
 interface TeacherRateClientProps {
   initialSubjectsData: Subject[];
 }
+
+const flowchartData: { semester: number, subjects: string[] }[] = [
+    { semester: 1, subjects: ["Geometria Analítica", "Cálculo I", "Álgebra", "Matemática Discreta", "Fundamentos da Computação"] },
+    { semester: 2, subjects: ["Álgebra Linear", "Cálculo II", "Cálculo das Probabilidades", "Algoritmos e Est. de Dados I", "Linguagem de Programação I", "Física I"] },
+    { semester: 3, subjects: ["Português Instrumental", "Cálculo III", "Algoritmos e Est. de Dados II", "Elementos de Lógica", "Linguagem de Programação II", "Teoria da Computação"] },
+    { semester: 4, subjects: ["Cálculo Numérico", "Cálculo IV", "Algoritmos em Grafos", "Engenharia de Software", "Arquitetura de Computadores I", "Física II"] },
+    { semester: 5, subjects: ["Estruturas de Linguagens", "Banco de Dados I", "Otimização em Grafos", "Análise e Proj. de Sistemas", "Sistemas Operacionais I", "Arquitetura de Computadores II", "Eletiva Básica"] },
+    { semester: 6, subjects: ["Otimização Combinatória", "Banco de Dados II", "Interfaces Humano-Comp.", "Eletiva I", "Sistemas Operacionais II", "Compiladores"] },
+    { semester: 7, subjects: ["Computação Gráfica", "Inteligência Artificial", "Ética Comp. e Sociedade", "Metod. Cient. no Projeto Final", "Redes de Computadores I", "Arq. Avançadas de Computadores"] },
+    { semester: 8, subjects: ["Eletiva II", "Eletiva III", "Projeto Final", "Sistemas Distribuídos", "Eletiva IV"] },
+];
+
+// Helper to find the semester for a subject
+const getSemesterForSubject = (subjectName: string): number | null => {
+    for (const semesterData of flowchartData) {
+        if (semesterData.subjects.some(s => s.toLowerCase() === subjectName.toLowerCase())) {
+            return semesterData.semester;
+        }
+    }
+    return null; // Or a default semester like 9 for electives not in the main flow
+};
 
 export default function TeacherRateClient({ initialSubjectsData }: TeacherRateClientProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -38,57 +59,70 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
     const subject = initialSubjectsData.find(s => s.name.toLowerCase() === subjectName.toLowerCase());
     if (subject) {
       const subjectId = `subject-${subject.id}`;
-      // Use a callback with setOpenAccordionItems to ensure we have the latest state
       setOpenAccordionItems(prev => {
           if (prev.includes(subjectId)) {
-              return prev; // Already open
+              return prev; 
           }
-          return [...prev, subjectId]; // Add to open items
+          return [...prev, subjectId];
       });
-
-      // Scroll after a short delay to allow the accordion to open
       setTimeout(() => {
         const element = document.getElementById(`subject-title-${subject.id}`);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-      }, 300); // 300ms delay to match accordion animation
+      }, 300);
     }
   };
 
-  const filteredSubjects = useMemo(() => {
-    const sortedSubjects = [...initialSubjectsData].sort((a, b) => a.name.localeCompare(b.name));
-
-    if (!searchQuery) {
-      return sortedSubjects;
-    }
-
+  const filteredAndGroupedSubjects = useMemo(() => {
     const lowercasedQuery = searchQuery.toLowerCase();
     
-    return sortedSubjects.map(subject => {
-        if (subject.name.toLowerCase().includes(lowercasedQuery)) {
-            return subject;
+    let subjectsToProcess = initialSubjectsData;
+
+    if (searchQuery) {
+        subjectsToProcess = initialSubjectsData.map(subject => {
+            const subjectMatch = subject.name.toLowerCase().includes(lowercasedQuery);
+            const teacherMatch = subject.teachers.filter(teacher => teacher.name.toLowerCase().includes(lowercasedQuery));
+            if (subjectMatch) {
+                return subject;
+            }
+            if (teacherMatch.length > 0) {
+                return { ...subject, teachers: teacherMatch };
+            }
+            return null;
+        }).filter((s): s is Subject => s !== null);
+    }
+
+    const grouped: Record<number, Subject[]> = {};
+    subjectsToProcess.forEach(subject => {
+        const semester = getSemesterForSubject(subject.name) ?? 99; // 99 for "Outros"
+        if (!grouped[semester]) {
+            grouped[semester] = [];
         }
-        const matchingTeachers = subject.teachers.filter(teacher =>
-            teacher.name.toLowerCase().includes(lowercasedQuery)
-        );
-        if (matchingTeachers.length > 0) {
-            return { ...subject, teachers: matchingTeachers };
-        }
-        return null;
-    }).filter((s): s is Subject => s !== null);
+        grouped[semester].push(subject);
+    });
+
+    // Sort subjects within each group alphabetically
+    for (const semester in grouped) {
+        grouped[semester].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return Object.entries(grouped).sort(([semA], [semB]) => parseInt(semA) - parseInt(semB));
 
   }, [initialSubjectsData, searchQuery]);
 
   
   const defaultAccordionValues = useMemo(() => {
     if (searchQuery) {
-      return filteredSubjects.map(sub => `subject-${sub.id}`);
+      // Expand all items when searching
+      return filteredAndGroupedSubjects.flatMap(([, subjects]) => subjects.map(sub => `subject-${sub.id}`));
     }
     return [];
-  }, [searchQuery, filteredSubjects]);
+  }, [searchQuery, filteredAndGroupedSubjects]);
 
   const accordionValue = searchQuery ? defaultAccordionValues : openAccordionItems;
+
+  const noResults = filteredAndGroupedSubjects.length === 0;
 
   return (
     <>
@@ -120,23 +154,14 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
         </AddTeacherOrReviewDialog>
       </div>
 
-      <Accordion 
-        type="multiple" 
-        value={accordionValue}
-        onValueChange={setOpenAccordionItems}
-        className="space-y-2"
-      >
-        {filteredSubjects.length > 0 ? (
-          filteredSubjects.map((subject) => (
-            <SubjectSection key={subject.id} subject={subject} />
-          ))
-        ) : (
-            <div className="text-center text-muted-foreground py-12">
+      <div className="space-y-6">
+        {noResults ? (
+             <div className="text-center text-muted-foreground py-12">
                 {initialSubjectsData.length > 0 ? (
-                     <>
+                    <>
                         <p className="font-semibold text-lg">Nenhum resultado encontrado para "{searchQuery}".</p>
                         <p className="mt-2 text-sm">Tente um termo de busca diferente.</p>
-                     </>
+                    </>
                 ) : (
                     <>
                         <p className="font-semibold text-lg">Nenhuma matéria cadastrada ainda.</p>
@@ -144,8 +169,26 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
                     </>
                 )}
             </div>
+        ) : (
+            filteredAndGroupedSubjects.map(([semester, subjects]) => (
+                <Fragment key={semester}>
+                    <h2 className="text-2xl font-bold tracking-tight text-foreground border-b pb-2">
+                        {parseInt(semester) > 8 ? 'Matérias não categorizadas' : `${semester}º Período`}
+                    </h2>
+                    <Accordion 
+                        type="multiple" 
+                        value={accordionValue}
+                        onValueChange={setOpenAccordionItems}
+                        className="space-y-2"
+                    >
+                        {subjects.map((subject) => (
+                            <SubjectSection key={subject.id} subject={subject} />
+                        ))}
+                    </Accordion>
+                </Fragment>
+            ))
         )}
-      </Accordion>
+      </div>
     </>
   );
 }
