@@ -42,7 +42,6 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
   const [searchQuery, setSearchQuery] = useState('');
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
 
-  const allTeachers = initialSubjectsData.flatMap(s => s.teachers.map(t => ({ ...t, subject: s.name })));
   const allSubjectNames = useMemo(() => initialSubjectsData.map(s => s.name).sort((a,b) => a.localeCompare(b)), [initialSubjectsData]);
 
   const onAddTeacherOrReview = async (data: {
@@ -141,7 +140,6 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
             </div>
         </div>
         <AddTeacherOrReviewDialog
-            allTeachers={allTeachers}
             allSubjectNames={allSubjectNames}
             onSubmit={onAddTeacherOrReview}
             open={isDialogOpen}

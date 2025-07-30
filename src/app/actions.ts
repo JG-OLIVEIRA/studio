@@ -1,3 +1,4 @@
+
 'use server';
 
 import { generateReviewInsights, type GenerateReviewInsightsInput, type GenerateReviewInsightsOutput } from "@/ai/flows/generate-review-insights";
@@ -58,4 +59,11 @@ export async function upvoteReview(reviewId: number) {
 export async function downvoteReview(reviewId: number) {
     await DataService.downvoteReview(reviewId);
     revalidatePath('/');
+}
+
+/**
+ * Server action to fetch all teachers.
+ */
+export async function getAllTeachers() {
+    return DataService.getAllTeachers();
 }

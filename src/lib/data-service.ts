@@ -36,19 +36,10 @@ const calculateAverageRating = (reviews: Review[]): number => {
     return total / reviews.length;
 };
 
-// Variáveis para garantir que a inicialização ocorra apenas uma vez, de forma segura.
+
 let initializationPromise: Promise<void> | null = null;
-let dbInitialized = false;
 
-/**
- * Garante que as tabelas necessárias existam e sincroniza as matérias.
- * Esta função agora é segura contra condições de corrida.
- */
 export async function initializeDatabase() {
-    if (dbInitialized) {
-        return;
-    }
-
     if (initializationPromise) {
         return initializationPromise;
     }
@@ -57,8 +48,9 @@ export async function initializeDatabase() {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
+            console.log("Iniciando verificação e migração do banco de dados...");
 
-            // Criação de tabelas
+            // 1. Criar tabelas com o novo esquema, se não existirem
             await client.query(`
                 CREATE TABLE IF NOT EXISTS subjects (
                     id SERIAL PRIMARY KEY,
@@ -68,9 +60,7 @@ export async function initializeDatabase() {
             await client.query(`
                 CREATE TABLE IF NOT EXISTS teachers (
                     id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    subject_id INTEGER NOT NULL,
-                    UNIQUE(name, subject_id)
+                    name VARCHAR(255) UNIQUE NOT NULL
                 );
             `);
             await client.query(`
@@ -78,69 +68,104 @@ export async function initializeDatabase() {
                     id SERIAL PRIMARY KEY,
                     text TEXT NOT NULL,
                     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-                    teacher_id INTEGER NOT NULL,
+                    teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+                    subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
                     upvotes INTEGER NOT NULL DEFAULT 0,
-                    downvotes INTEGER NOT NULL DEFAULT 0
+                    downvotes INTEGER NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
                 );
             `);
             
-            // Adiciona a coluna created_at se ela não existir
-            await client.query(`
-                ALTER TABLE reviews 
-                ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL;
-            `);
+            const teachersTableHasSubjectId = await client.query(`
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name='teachers' AND column_name='subject_id';
+            `).then(res => res.rowCount > 0);
 
-            // Garante as constraints de ON DELETE CASCADE
-            await client.query(`
-                ALTER TABLE teachers 
-                DROP CONSTRAINT IF EXISTS teachers_subject_id_fkey,
-                ADD CONSTRAINT teachers_subject_id_fkey 
-                FOREIGN KEY (subject_id) 
-                REFERENCES subjects(id) 
-                ON DELETE CASCADE;
-            `);
-            await client.query(`
-                ALTER TABLE reviews 
-                DROP CONSTRAINT IF EXISTS reviews_teacher_id_fkey,
-                ADD CONSTRAINT reviews_teacher_id_fkey 
-                FOREIGN KEY (teacher_id) 
-                REFERENCES teachers(id) 
-                ON DELETE CASCADE;
-            `);
+            if (teachersTableHasSubjectId) {
+                console.log("Detectado esquema antigo. Iniciando migração de dados...");
+                
+                await client.query('ALTER TABLE reviews RENAME TO reviews_old;');
+                await client.query('ALTER TABLE teachers RENAME TO teachers_old;');
 
-            console.log("Verificação de tabelas concluída e constraints corretas.");
+                await client.query(`
+                    CREATE TABLE teachers (
+                        id SERIAL PRIMARY KEY,
+                        name VARCHAR(255) UNIQUE NOT NULL
+                    );
+                `);
+                 await client.query(`
+                    CREATE TABLE reviews (
+                        id SERIAL PRIMARY KEY,
+                        text TEXT NOT NULL,
+                        rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                        teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+                        subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+                        upvotes INTEGER NOT NULL DEFAULT 0,
+                        downvotes INTEGER NOT NULL DEFAULT 0,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+                    );
+                `);
 
-            // Sincronização de matérias
-            const dbSubjectsResult = await client.query('SELECT id, name FROM subjects');
+                await client.query(`
+                    INSERT INTO teachers (name)
+                    SELECT DISTINCT name FROM teachers_old
+                    ON CONFLICT (name) DO NOTHING;
+                `);
+                
+                await client.query(`
+                    INSERT INTO reviews (id, text, rating, teacher_id, subject_id, upvotes, downvotes, created_at)
+                    SELECT 
+                        r_old.id, 
+                        r_old.text, 
+                        r_old.rating, 
+                        t_new.id,
+                        t_old.subject_id,
+                        r_old.upvotes,
+                        r_old.downvotes,
+                        r_old.created_at
+                    FROM reviews_old r_old
+                    JOIN teachers_old t_old ON r_old.teacher_id = t_old.id
+                    JOIN teachers t_new ON t_old.name = t_new.name;
+                `);
+
+                await client.query('DROP TABLE reviews_old;');
+                await client.query('DROP TABLE teachers_old;');
+
+                console.log("Migração de esquema concluída com sucesso.");
+            }
+
+            // Adicionar a coluna created_at se ela não existir
+            const reviewsHasCreatedAt = await client.query(`
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name='reviews' AND column_name='created_at';
+            `).then(res => res.rowCount > 0);
+
+            if (!reviewsHasCreatedAt) {
+                console.log("Adicionando coluna 'created_at' à tabela 'reviews'.");
+                await client.query('ALTER TABLE reviews ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL');
+            }
+
+            // Sincronizar matérias do currículo
+            const dbSubjectsResult = await client.query('SELECT name FROM subjects');
             const dbSubjectNames = dbSubjectsResult.rows.map(s => s.name);
-
             const subjectsToAdd = curriculumSubjects.filter(cs => !dbSubjectNames.includes(cs));
+
             if (subjectsToAdd.length > 0) {
                 const insertQuery = 'INSERT INTO subjects (name) VALUES ' + subjectsToAdd.map((_, i) => `($${i + 1})`).join(', ');
                 await client.query(insertQuery, subjectsToAdd);
-                console.log(`Adicionadas ${subjectsToAdd.length} novas matérias ao DB.`);
+                console.log(`Adicionadas ${subjectsToAdd.length} novas matérias.`);
             }
 
-            const subjectsToRemove = dbSubjectsResult.rows.filter(ds => !curriculumSubjects.includes(ds.name));
-            if (subjectsToRemove.length > 0) {
-                const idsToRemove = subjectsToRemove.map(s => s.id);
-                await client.query('DELETE FROM subjects WHERE id = ANY($1::int[])', [idsToRemove]);
-                console.log(`Removidas ${subjectsToRemove.length} matérias obsoletas do DB.`);
-            }
-            
             await client.query('COMMIT');
-            dbInitialized = true;
+            console.log("Banco de dados inicializado e migrado com sucesso.");
         } catch (error) {
             await client.query('ROLLBACK');
-            console.error("Erro ao inicializar o banco de dados:", error);
-            // Reseta a promessa para permitir uma nova tentativa
-            initializationPromise = null; 
+            console.error("Erro durante a inicialização/migração do banco de dados:", error);
+            // Redefinir a promessa em caso de erro para permitir nova tentativa
+            initializationPromise = null;
             throw new Error("Não foi possível inicializar o banco de dados.");
         } finally {
             client.release();
-            if (!dbInitialized) {
-              initializationPromise = null; // Clean up promise only on failure
-            }
         }
     })();
 
@@ -148,161 +173,127 @@ export async function initializeDatabase() {
 }
 
 
-/**
- * Busca todas as matérias, seus professores e avaliações do banco de dados.
- */
 export async function getSubjects(): Promise<Subject[]> {
-  await initializeDatabase();
-  
-  console.log("Buscando dados do banco de dados PostgreSQL...");
-  const client = await pool.connect();
-  try {
-    const query = `
-      SELECT
-        s.id as subject_id,
-        s.name as subject_name,
-        t.id as teacher_id,
-        t.name as teacher_name,
-        r.id as review_id,
-        r.text as review_text,
-        r.rating as review_rating,
-        r.upvotes as review_upvotes,
-        r.downvotes as review_downvotes,
-        r.created_at as review_created_at
-      FROM
-        subjects s
-      LEFT JOIN
-        teachers t ON s.id = t.subject_id
-      LEFT JOIN
-        reviews r ON t.id = r.teacher_id
-      ORDER BY
-        s.name, t.name, r.created_at DESC;
-    `;
+    await initializeDatabase();
+    
+    const client = await pool.connect();
+    try {
+        const query = `
+            SELECT 
+                s.id as subject_id,
+                s.name as subject_name,
+                t.id as teacher_id,
+                t.name as teacher_name,
+                r.id as review_id,
+                r.text as review_text,
+                r.rating as review_rating,
+                r.upvotes as review_upvotes,
+                r.downvotes as review_downvotes,
+                r.created_at as review_created_at
+            FROM subjects s
+            LEFT JOIN reviews r ON s.id = r.subject_id
+            LEFT JOIN teachers t ON r.teacher_id = t.id
+            ORDER BY s.name, t.name;
+        `;
 
-    const result = await client.query(query);
+        const result = await client.query(query);
 
-    const subjectsMap: Map<number, Subject> = new Map();
-    const teachersMap: Map<number, Teacher> = new Map();
+        const subjectsMap: Map<number, Subject> = new Map();
+        const allSubjectsResult = await client.query('SELECT id, name FROM subjects ORDER BY name');
+        for (const subjectRow of allSubjectsResult.rows) {
+            subjectsMap.set(subjectRow.id, {
+                id: subjectRow.id,
+                name: subjectRow.name,
+                iconName: assignIconName(subjectRow.name),
+                teachers: [],
+            });
+        }
+        
+        const teachersMap: Map<string, Teacher> = new Map();
 
-    // Primeiro, inicialize todas as matérias no mapa a partir do resultado da query
-    // para garantir que estamos lidando com a mesma lista.
-    const allSubjectsResult = await client.query('SELECT id, name FROM subjects ORDER BY name');
-    for (const subjectRow of allSubjectsResult.rows) {
-        subjectsMap.set(subjectRow.id, {
-            id: subjectRow.id,
-            name: subjectRow.name,
-            iconName: assignIconName(subjectRow.name),
-            teachers: [],
+        for (const row of result.rows) {
+            if (!row.subject_id) continue;
+
+            const subject = subjectsMap.get(row.subject_id);
+            if (!subject) continue;
+            
+            if (row.teacher_id) {
+                const teacherKey = `${row.teacher_id}-${row.subject_id}`;
+                let teacher = teachersMap.get(teacherKey);
+
+                if (!teacher) {
+                    teacher = {
+                        id: row.teacher_id,
+                        name: row.teacher_name,
+                        subject: subject.name,
+                        reviews: [],
+                        averageRating: 0,
+                    };
+                    teachersMap.set(teacherKey, teacher);
+                    subject.teachers.push(teacher);
+                }
+
+                if (row.review_id && !teacher.reviews.some(r => r.id === row.review_id)) {
+                    teacher.reviews.push({
+                        id: row.review_id,
+                        text: row.review_text,
+                        rating: row.review_rating,
+                        upvotes: row.review_upvotes,
+                        downvotes: row.review_downvotes,
+                        createdAt: (row.review_created_at || new Date()).toISOString(),
+                    });
+                }
+            }
+        }
+        
+        subjectsMap.forEach(subject => {
+            subject.teachers.forEach(teacher => {
+                teacher.averageRating = calculateAverageRating(teacher.reviews);
+            });
         });
+
+        return Array.from(subjectsMap.values());
+
+    } catch (error) {
+        console.error("Erro ao buscar dados do PostgreSQL:", error);
+        return [];
+    } finally {
+        client.release();
     }
-    
-    // Processar cada linha do resultado da consulta principal
-    for (const row of result.rows) {
-        if (!row.teacher_id) {
-            // Se a matéria não tiver professores, ela já está no mapa.
-            continue;
-        }
-
-        // Recupera o professor do mapa de professores ou cria um novo.
-        // A chave é o ID do professor, que é único globalmente.
-        let teacher = teachersMap.get(row.teacher_id);
-
-        if (!teacher) {
-            teacher = {
-                id: row.teacher_id,
-                name: row.teacher_name,
-                subject: row.subject_name,
-                reviews: [],
-                averageRating: 0, // Será calculado mais tarde
-            };
-            teachersMap.set(row.teacher_id, teacher);
-        }
-
-        // Adiciona a avaliação, se houver e não for duplicada.
-        if (row.review_id && !teacher.reviews.some(r => r.id === row.review_id)) {
-            teacher.reviews.push({
-                id: row.review_id,
-                text: row.review_text,
-                rating: row.review_rating,
-                upvotes: row.review_upvotes,
-                downvotes: row.review_downvotes,
-                createdAt: (row.review_created_at || new Date()).toISOString(),
-            });
-        }
-    }
-    
-    // Agora, calcule a média de notas para cada professor.
-    teachersMap.forEach(teacher => {
-        teacher.averageRating = calculateAverageRating(teacher.reviews);
-    });
-
-    // Finalmente, associe as instâncias de professores às suas matérias.
-    // Como um professor pode lecionar múltiplas matérias, criamos cópias.
-    for (const row of result.rows) {
-        if (!row.teacher_id) continue;
-        
-        const subject = subjectsMap.get(row.subject_id);
-        const teacher = teachersMap.get(row.teacher_id);
-        
-        // Adiciona uma cópia do professor à matéria, se ele ainda não estiver lá.
-        if (subject && teacher && !subject.teachers.some(t => t.id === teacher.id)) {
-            subject.teachers.push({
-                ...teacher,
-                subject: subject.name // Garante que o nome da matéria está correto no contexto.
-            });
-        }
-    }
-
-    return Array.from(subjectsMap.values());
-
-  } catch (error) {
-    console.error("Erro ao buscar dados do PostgreSQL:", error);
-    return [];
-  } finally {
-    client.release();
-  }
 }
 
-/**
- * Adiciona um novo professor ou uma nova avaliação para um professor existente no banco de dados.
- */
+
 export async function addTeacherOrReview(data: {
   teacherName: string;
   subjectName: string;
   reviewText: string;
   reviewRating: number;
 }): Promise<void> {
-    console.log("Adicionando professor/avaliação no banco de dados PostgreSQL...", data);
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        // 1. Encontra a matéria (não cria mais)
-        let subjectResult = await client.query('SELECT id FROM subjects WHERE name = $1', [data.subjectName]);
+        const subjectResult = await client.query('SELECT id FROM subjects WHERE name = $1', [data.subjectName]);
         if (subjectResult.rowCount === 0) {
-            throw new Error(`Matéria "${data.subjectName}" não encontrada. A criação de novas matérias não é permitida.`);
+            throw new Error(`Matéria "${data.subjectName}" não encontrada.`);
         }
         const subjectId = subjectResult.rows[0].id;
 
-        // 2. Encontra ou cria o professor
-        let teacherResult = await client.query('SELECT id FROM teachers WHERE name = $1 AND subject_id = $2', [data.teacherName, subjectId]);
+        let teacherResult = await client.query('SELECT id FROM teachers WHERE name = $1', [data.teacherName]);
         let teacherId;
         if (teacherResult.rowCount === 0) {
-            // A criação de professores ainda é permitida dentro de matérias existentes
-            const newTeacherResult = await client.query('INSERT INTO teachers (name, subject_id) VALUES ($1, $2) RETURNING id', [data.teacherName, subjectId]);
+            const newTeacherResult = await client.query('INSERT INTO teachers (name) VALUES ($1) RETURNING id', [data.teacherName]);
             teacherId = newTeacherResult.rows[0].id;
         } else {
             teacherId = teacherResult.rows[0].id;
         }
 
-        // 3. Insere a avaliação
         await client.query(
-            'INSERT INTO reviews (text, rating, teacher_id) VALUES ($1, $2, $3)',
-            [data.reviewText, data.reviewRating, teacherId]
+            'INSERT INTO reviews (text, rating, teacher_id, subject_id, created_at) VALUES ($1, $2, $3, $4, NOW())',
+            [data.reviewText, data.reviewRating, teacherId, subjectId]
         );
 
         await client.query('COMMIT');
-
     } catch (error) {
         await client.query('ROLLBACK');
         console.error("Erro ao adicionar professor/avaliação:", error);
@@ -312,11 +303,8 @@ export async function addTeacherOrReview(data: {
     }
 }
 
-/**
- * Deleta uma avaliação do banco de dados.
- */
+
 export async function deleteReview(reviewId: number): Promise<void> {
-    console.log(`Deletando avaliação com ID: ${reviewId}`);
     const client = await pool.connect();
     try {
         await client.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
@@ -328,11 +316,8 @@ export async function deleteReview(reviewId: number): Promise<void> {
     }
 }
 
-/**
- * Incrementa o contador de upvotes de uma avaliação.
- */
+
 export async function upvoteReview(reviewId: number): Promise<void> {
-    console.log(`Upvoting review com ID: ${reviewId}`);
     const client = await pool.connect();
     try {
         await client.query('UPDATE reviews SET upvotes = upvotes + 1 WHERE id = $1', [reviewId]);
@@ -344,17 +329,29 @@ export async function upvoteReview(reviewId: number): Promise<void> {
     }
 }
 
-/**
- * Incrementa o contador de downvotes de uma avaliação.
- */
+
 export async function downvoteReview(reviewId: number): Promise<void> {
-    console.log(`Downvoting review com ID: ${reviewId}`);
     const client = await pool.connect();
     try {
         await client.query('UPDATE reviews SET downvotes = downvotes + 1 WHERE id = $1', [reviewId]);
     } catch (error) {
         console.error("Erro ao dar downvote na avaliação:", error);
         throw new Error("Falha ao registrar o voto.");
+    } finally {
+        client.release();
+    }
+}
+
+
+export async function getAllTeachers(): Promise<{ id: number; name: string }[]> {
+    await initializeDatabase();
+    const client = await pool.connect();
+    try {
+        const result = await client.query('SELECT id, name FROM teachers ORDER BY name');
+        return result.rows;
+    } catch (error) {
+        console.error("Erro ao buscar todos os professores:", error);
+        return [];
     } finally {
         client.release();
     }

@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useMemo, type ReactNode } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useState, useMemo, type ReactNode, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -24,9 +24,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Teacher } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Combobox } from './ui/combobox';
+import { getAllTeachers } from '@/app/actions';
 
 const formSchema = z.object({
   teacherName: z.string().trim()
@@ -43,7 +43,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface AddTeacherOrReviewDialogProps {
     children: ReactNode;
-    allTeachers: (Teacher & { subject: string })[];
     allSubjectNames: string[];
     onSubmit: (data: Omit<FormValues, 'reviewAuthor'>) => void;
     open: boolean;
@@ -52,13 +51,20 @@ interface AddTeacherOrReviewDialogProps {
 
 export function AddTeacherOrReviewDialog({ 
     children, 
-    allTeachers, 
     allSubjectNames,
     onSubmit,
     open,
     onOpenChange 
 }: AddTeacherOrReviewDialogProps) {
   const [hoverRating, setHoverRating] = useState(0);
+  const [allTeachers, setAllTeachers] = useState<{ id: number, name: string }[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      getAllTeachers().then(setAllTeachers);
+    }
+  }, [open]);
+
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -70,19 +76,15 @@ export function AddTeacherOrReviewDialog({
     },
   });
 
-  const subjectName = useWatch({ control: form.control, name: 'subjectName' });
-
   const subjectOptions = useMemo(() => {
     return allSubjectNames.map(name => ({ value: name, label: name }));
   }, [allSubjectNames]);
 
   const teacherOptions = useMemo(() => {
-    if (!subjectName) return [];
     return allTeachers
-        .filter(teacher => teacher.subject === subjectName)
         .map(teacher => ({ value: teacher.name, label: teacher.name }))
         .sort((a,b) => a.label.localeCompare(b.label));
-  }, [subjectName, allTeachers]);
+  }, [allTeachers]);
 
 
   const handleSubmit = (values: FormValues) => {
@@ -104,7 +106,7 @@ export function AddTeacherOrReviewDialog({
             <DialogHeader>
             <DialogTitle>Adicionar nova avaliação</DialogTitle>
             <DialogDescription>
-                Selecione a matéria e informe o nome do professor. Se o professor não existir na matéria, ele será criado.
+                Selecione a matéria e o professor. Se o professor não existir, ele será criado.
             </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -116,10 +118,7 @@ export function AddTeacherOrReviewDialog({
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel>Matéria</FormLabel>
-                             <Select onValueChange={(value) => {
-                                 field.onChange(value);
-                                 form.setValue('teacherName', ''); // Reset teacher when subject changes
-                             }} value={field.value}>
+                             <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecione a matéria" />
@@ -140,7 +139,7 @@ export function AddTeacherOrReviewDialog({
                         name="teacherName"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Nome do Professor</FormLabel>
+                                <FormLabel>Professor</FormLabel>
                                 <FormControl>
                                     <Combobox
                                         options={teacherOptions}
@@ -148,7 +147,6 @@ export function AddTeacherOrReviewDialog({
                                         onChange={field.onChange}
                                         placeholder="Selecione ou crie..."
                                         createLabel="Criar novo professor:"
-                                        disabled={!subjectName}
                                     />
                                 </FormControl>
                                 <FormMessage />
