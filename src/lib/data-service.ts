@@ -80,8 +80,7 @@ export async function initializeDatabase() {
                     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
                     teacher_id INTEGER NOT NULL,
                     upvotes INTEGER NOT NULL DEFAULT 0,
-                    downvotes INTEGER NOT NULL DEFAULT 0,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+                    downvotes INTEGER NOT NULL DEFAULT 0
                 );
             `);
             
@@ -183,9 +182,10 @@ export async function getSubjects(): Promise<Subject[]> {
     const result = await client.query(query);
 
     const subjectsMap: Map<number, Subject> = new Map();
-    const teachersMap = new Map<string, Teacher>();
+    const teachersMap: Map<number, Teacher> = new Map();
 
-    // Primeiro, inicialize todas as matérias no mapa.
+    // Primeiro, inicialize todas as matérias no mapa a partir do resultado da query
+    // para garantir que estamos lidando com a mesma lista.
     const allSubjectsResult = await client.query('SELECT id, name FROM subjects ORDER BY name');
     for (const subjectRow of allSubjectsResult.rows) {
         subjectsMap.set(subjectRow.id, {
@@ -195,53 +195,63 @@ export async function getSubjects(): Promise<Subject[]> {
             teachers: [],
         });
     }
-
-    // Processe cada linha do resultado da consulta principal.
+    
+    // Processar cada linha do resultado da consulta principal
     for (const row of result.rows) {
-      if (!row.teacher_id) {
-        // Se a matéria não tiver professores, ela já está no mapa.
-        continue;
-      }
-
-      // A chave única para um professor é a combinação de seu ID e o ID da matéria.
-      const teacherKey = `${row.teacher_id}-${row.subject_id}`;
-
-      // Se este professor (nesta matéria) ainda não está no mapa, adicione-o.
-      if (!teachersMap.has(teacherKey)) {
-        const newTeacher: Teacher = {
-          id: row.teacher_id,
-          name: row.teacher_name,
-          subject: row.subject_name,
-          reviews: [],
-          averageRating: 0, // Será calculado mais tarde
-        };
-        teachersMap.set(teacherKey, newTeacher);
-        
-        // Associe este novo professor à sua matéria.
-        const subject = subjectsMap.get(row.subject_id);
-        if (subject) {
-          subject.teachers.push(newTeacher);
+        if (!row.teacher_id) {
+            // Se a matéria não tiver professores, ela já está no mapa.
+            continue;
         }
-      }
 
-      // Obtenha o professor e adicione a avaliação, se houver.
-      const teacher = teachersMap.get(teacherKey)!;
-      if (row.review_id && !teacher.reviews.some(r => r.id === row.review_id)) {
-        teacher.reviews.push({
-          id: row.review_id,
-          text: row.review_text,
-          rating: row.review_rating,
-          upvotes: row.review_upvotes,
-          downvotes: row.review_downvotes,
-          createdAt: (row.review_created_at || new Date()).toISOString(),
-        });
-      }
+        // Recupera o professor do mapa de professores ou cria um novo.
+        // A chave é o ID do professor, que é único globalmente.
+        let teacher = teachersMap.get(row.teacher_id);
+
+        if (!teacher) {
+            teacher = {
+                id: row.teacher_id,
+                name: row.teacher_name,
+                subject: row.subject_name,
+                reviews: [],
+                averageRating: 0, // Será calculado mais tarde
+            };
+            teachersMap.set(row.teacher_id, teacher);
+        }
+
+        // Adiciona a avaliação, se houver e não for duplicada.
+        if (row.review_id && !teacher.reviews.some(r => r.id === row.review_id)) {
+            teacher.reviews.push({
+                id: row.review_id,
+                text: row.review_text,
+                rating: row.review_rating,
+                upvotes: row.review_upvotes,
+                downvotes: row.review_downvotes,
+                createdAt: (row.review_created_at || new Date()).toISOString(),
+            });
+        }
     }
-
+    
     // Agora, calcule a média de notas para cada professor.
     teachersMap.forEach(teacher => {
         teacher.averageRating = calculateAverageRating(teacher.reviews);
     });
+
+    // Finalmente, associe as instâncias de professores às suas matérias.
+    // Como um professor pode lecionar múltiplas matérias, criamos cópias.
+    for (const row of result.rows) {
+        if (!row.teacher_id) continue;
+        
+        const subject = subjectsMap.get(row.subject_id);
+        const teacher = teachersMap.get(row.teacher_id);
+        
+        // Adiciona uma cópia do professor à matéria, se ele ainda não estiver lá.
+        if (subject && teacher && !subject.teachers.some(t => t.id === teacher.id)) {
+            subject.teachers.push({
+                ...teacher,
+                subject: subject.name // Garante que o nome da matéria está correto no contexto.
+            });
+        }
+    }
 
     return Array.from(subjectsMap.values());
 
