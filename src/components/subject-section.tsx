@@ -44,8 +44,8 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
 
   return (
     <section aria-labelledby={`subject-title-${subject.id}`}>
-      <Card className="overflow-hidden bg-card/80 backdrop-blur-sm">
-        <CardHeader className="bg-muted/50 border-b">
+      <Card className="overflow-hidden bg-card/80 backdrop-blur-sm border-secondary">
+        <CardHeader className="bg-muted/50 border-b border-secondary">
           <div className="flex items-center justify-between">
             <CardTitle id={`subject-title-${subject.id}`} className="flex items-center gap-3 text-2xl font-semibold">
               <Icon className="h-6 w-6 text-primary" />
@@ -65,7 +65,7 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
                 <TeacherCard
                   key={teacher.id}
                   teacher={{...teacher, subject: subject.name}}
-                  isTopTeacher={index === 0 && teacher.averageRating > 0}
+                  isTopTeacher={index === 0 && teacher.averageRating >= 4}
                 />
               ))}
             </div>

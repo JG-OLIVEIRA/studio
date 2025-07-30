@@ -9,7 +9,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import StarRating from './star-rating';
 import AIReviewInsights from './ai-review-insights';
 import { Button } from './ui/button';
-import { Dialog } from './ui/dialog';
 import { AddReviewForm } from './add-review-form';
 import { ViewReviewsDialog } from './view-reviews-dialog';
 
@@ -32,7 +31,7 @@ export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCa
   return (
     <Card
       className={cn(
-        'flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
+        'flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-background/50',
         isTopTeacher && 'border-primary border-2 shadow-primary/20'
       )}
     >
