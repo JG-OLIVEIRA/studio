@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Sparkles, MessageSquarePlus } from 'lucide-react';
+import { Sparkles, MessageSquarePlus, Eye } from 'lucide-react';
 import type { Teacher } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { AddReviewForm, type ReviewFormValues } from './add-review-form';
 import { handleAddTeacherOrReview } from '@/app/actions';
+import { ViewReviewsDialog } from './view-reviews-dialog';
 
 interface TeacherCardProps {
   teacher: Teacher;
@@ -33,7 +34,6 @@ export default function TeacherCard({ teacher }: TeacherCardProps) {
     });
 
     setIsReviewOpen(false);
-    // No need to call a callback anymore, revalidatePath in the server action handles updates.
   }
 
   const averageRating = useMemo(() => {
@@ -62,15 +62,23 @@ export default function TeacherCard({ teacher }: TeacherCardProps) {
           {hasReviews ? `${teacher.reviews.length} avaliações` : "Nenhuma avaliação ainda"}
         </p>
       </CardContent>
-      <CardFooter className="flex-col items-stretch gap-2">
+      <CardFooter className="grid grid-cols-2 gap-2">
         <AIReviewInsights teacher={teacher} disabled={!hasReviews}>
           <Button variant="secondary" className="w-full" disabled={!hasReviews}>
             <Sparkles className="mr-2 h-4 w-4" />
-            Insights de IA
+            IA
           </Button>
         </AIReviewInsights>
+        
+        <ViewReviewsDialog teacher={teacher} disabled={!hasReviews}>
+            <Button variant="secondary" className="w-full" disabled={!hasReviews}>
+                <Eye className="mr-2 h-4 w-4" />
+                Ver
+            </Button>
+        </ViewReviewsDialog>
+
         <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-            <Button onClick={() => setIsReviewOpen(true)} className="w-full">
+            <Button onClick={() => setIsReviewOpen(true)} className="w-full col-span-2">
                 <MessageSquarePlus className="mr-2 h-4 w-4" />
                 Adicionar Avaliação
             </Button>
