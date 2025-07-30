@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpen, FlaskConical, Palette, ScrollText, Sigma, GraduationCap, PlusCircle } from 'lucide-react';
 import type { Subject, Teacher } from '@/lib/types';
 import SubjectSection from '@/components/subject-section';
@@ -44,9 +44,68 @@ const initialSubjectsData: Subject[] = [
 // END OF DATABASE CONFIGURATION
 // ============================================================================
 
+// Helper to get component for icon name
+const getIconComponent = (iconName: string) => {
+  switch (iconName) {
+    case 'Sigma': return Sigma;
+    case 'FlaskConical': return FlaskConical;
+    case 'ScrollText': return ScrollText;
+    case 'BookOpen': return BookOpen;
+    case 'Palette': return Palette;
+    case 'GraduationCap': return GraduationCap;
+    default: return GraduationCap;
+  }
+}
+
+// Custom serializer for JSON to handle icon components
+const replacer = (key: string, value: any) => {
+  if (key === 'icon') {
+    // Store the function name as a string
+    return value.displayName || value.name;
+  }
+  return value;
+};
+
+// Custom reviver for JSON to restore icon components
+const reviver = (key: string, value: any) => {
+  if (key === 'icon') {
+    return getIconComponent(value);
+  }
+  return value;
+}
+
+
 export default function Home() {
-  const [subjectsData, setSubjectsData] = useState<Subject[]>(initialSubjectsData);
+  const [subjectsData, setSubjectsData] = useState<Subject[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  // Load data from localStorage on initial render
+  useEffect(() => {
+    try {
+      const storedData = localStorage.getItem('teacherRateData');
+      if (storedData) {
+        setSubjectsData(JSON.parse(storedData, reviver));
+      } else {
+        setSubjectsData(initialSubjectsData);
+      }
+    } catch (error) {
+      console.error("Failed to parse data from localStorage", error);
+      setSubjectsData(initialSubjectsData);
+    }
+    setIsDataLoaded(true);
+  }, []);
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    if (isDataLoaded) {
+      try {
+        localStorage.setItem('teacherRateData', JSON.stringify(subjectsData, replacer));
+      } catch (error) {
+        console.error("Failed to save data to localStorage", error);
+      }
+    }
+  }, [subjectsData, isDataLoaded]);
 
   const allTeachers = subjectsData.flatMap(s => s.teachers.map(t => ({ ...t, subject: s.name })));
   const allSubjectNames = subjectsData.map(s => s.name);
@@ -59,7 +118,9 @@ export default function Home() {
     reviewRating: number;
   }) => {
     setSubjectsData(prevSubjects => {
-      const subjectsCopy = JSON.parse(JSON.stringify(prevSubjects));
+      // Deep copy to avoid mutation issues, using our custom replacer/reviver
+      const subjectsCopy = JSON.parse(JSON.stringify(prevSubjects, replacer), reviver);
+
       let subjectIndex = subjectsCopy.findIndex((s: Subject) => s.name.toLowerCase() === data.subjectName.toLowerCase());
 
       // If subject doesn't exist, create it.
