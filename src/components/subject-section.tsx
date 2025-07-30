@@ -27,7 +27,7 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
       averageRating: calculateAverageRating(teacher),
     }))
     .sort((a, b) => {
-      // Then sort by average rating
+      // Sort by average rating in descending order
       return b.averageRating - a.averageRating;
     });
 
