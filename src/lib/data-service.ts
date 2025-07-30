@@ -21,42 +21,6 @@ function assignIconName(subjectName: string): string {
 }
 
 /**
- * Limpa dados inválidos ou de teste do banco de dados.
- * Roda apenas uma vez para garantir a qualidade dos dados existentes.
- */
-async function cleanupInvalidData() {
-    const client = await pool.connect();
-    try {
-      console.log("Iniciando limpeza de dados inválidos...");
-      // Remove avaliações com texto muito curto
-      await client.query(`DELETE FROM reviews WHERE LENGTH(text) < 15;`);
-      // Remove professores com nomes muito curtos
-      await client.query(`DELETE FROM teachers WHERE LENGTH(name) < 3;`);
-      // Remove matérias com nomes muito curtos (e seus professores e avaliações em cascata, se configurado)
-      // Primeiro, deletar reviews de professores em matérias com nomes curtos
-      await client.query(`
-        DELETE FROM reviews WHERE teacher_id IN (
-            SELECT t.id FROM teachers t JOIN subjects s ON t.subject_id = s.id WHERE LENGTH(s.name) < 3
-        );
-      `);
-      // Segundo, deletar os professores
-      await client.query(`
-        DELETE FROM teachers WHERE subject_id IN (
-            SELECT id FROM subjects WHERE LENGTH(name) < 3
-        );
-      `);
-      // Por fim, deletar as matérias
-      await client.query(`DELETE FROM subjects WHERE LENGTH(name) < 3;`);
-      
-      console.log("Limpeza de dados concluída.");
-    } catch (error) {
-      console.error("Erro durante a limpeza de dados:", error);
-    } finally {
-      client.release();
-    }
-  }
-
-/**
  * Garante que as tabelas necessárias existam no banco de dados.
  * Cria as tabelas se elas ainda não tiverem sido criadas.
  */
@@ -95,20 +59,12 @@ async function ensureDbTablesExist() {
   }
 }
 
-// Controla para que a limpeza rode apenas uma vez por inicialização do servidor.
-let cleanupRun = false;
-
 /**
  * Busca todas as matérias, seus professores e avaliações do banco de dados.
  */
 export async function getSubjects(): Promise<Subject[]> {
   // Garante que as tabelas existem antes de tentar buscar os dados
   await ensureDbTablesExist();
-
-  if (!cleanupRun) {
-    await cleanupInvalidData();
-    cleanupRun = true;
-  }
 
   console.log("Buscando dados do banco de dados PostgreSQL...");
   const client = await pool.connect();
