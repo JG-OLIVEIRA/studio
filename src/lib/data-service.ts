@@ -109,6 +109,7 @@ export async function getSubjects(): Promise<Subject[]> {
 
 
     const subjects: Subject[] = subjectsResult.rows.map(subject => ({
+      id: subject.id,
       name: subject.name,
       iconName: assignIconName(subject.name),
       teachers: (teachersBySubjectId[subject.id] || []).map(t => ({...t, subject: subject.name })),
@@ -174,6 +175,41 @@ export async function addTeacherOrReview(data: {
         await client.query('ROLLBACK');
         console.error("Erro ao adicionar professor/avaliação:", error);
         throw new Error("Falha ao salvar os dados no banco de dados.");
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Deleta uma avaliação do banco de dados.
+ */
+export async function deleteReview(reviewId: number): Promise<void> {
+    console.log(`Deletando avaliação com ID: ${reviewId}`);
+    const client = await pool.connect();
+    try {
+        await client.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
+    } catch (error) {
+        console.error("Erro ao deletar avaliação:", error);
+        throw new Error("Falha ao deletar a avaliação do banco de dados.");
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Atualiza o nome de uma matéria no banco de dados.
+ */
+export async function updateSubjectName(subjectId: number, newName: string): Promise<void> {
+    console.log(`Atualizando matéria com ID ${subjectId} para o novo nome: ${newName}`);
+    const client = await pool.connect();
+    try {
+        await client.query('UPDATE subjects SET name = $1 WHERE id = $2', [newName, subjectId]);
+    } catch (error) {
+        console.error("Erro ao atualizar o nome da matéria:", error);
+        if ((error as any).code === '23505') { // unique_violation
+            throw new Error("Uma matéria com este nome já existe.");
+        }
+        throw new Error("Falha ao atualizar o nome da matéria no banco de dados.");
     } finally {
         client.release();
     }

@@ -35,3 +35,19 @@ export async function handleAddTeacherOrReview(data: {
 export async function getSubjectsData() {
     return DataService.getSubjects();
 }
+
+/**
+ * Server action to delete a review.
+ */
+export async function deleteReview(reviewId: number) {
+    await DataService.deleteReview(reviewId);
+    revalidatePath('/');
+}
+
+/**
+ * Server action to update a subject's name.
+ */
+export async function updateSubjectName(subjectId: number, newName: string) {
+    await DataService.updateSubjectName(subjectId, newName);
+    revalidatePath('/');
+}

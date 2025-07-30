@@ -14,6 +14,7 @@ export interface Teacher {
 }
 
 export interface Subject {
+  id: number;
   name: string;
   iconName: string;
   teachers: Teacher[];

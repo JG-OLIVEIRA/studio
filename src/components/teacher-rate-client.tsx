@@ -37,9 +37,13 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
   };
 
   const handleSubjectClick = (subjectName: string) => {
-    const element = document.getElementById(`subject-title-${subjectName.replace(/\s+/g, '-')}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Find subject ID by name
+    const subject = initialSubjectsData.find(s => s.name.toLowerCase() === subjectName.toLowerCase());
+    if (subject) {
+      const element = document.getElementById(`subject-title-${subject.id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
   };
 
@@ -97,7 +101,7 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
       <div className="space-y-16">
         {filteredSubjects.length > 0 ? (
           filteredSubjects.map((subject) => (
-            <SubjectSection key={subject.name} subject={subject} />
+            <SubjectSection key={subject.id} subject={subject} />
           ))
         ) : (
             <div className="text-center text-muted-foreground py-12">

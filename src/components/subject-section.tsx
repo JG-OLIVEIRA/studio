@@ -1,7 +1,12 @@
+
+'use client';
+
 import * as LucideIcons from 'lucide-react';
 import type { Subject, Teacher } from '@/lib/types';
 import TeacherCard from '@/components/teacher-card';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { EditSubjectDialog } from './edit-subject-dialog';
+import { Pencil } from 'lucide-react';
 
 interface SubjectSectionProps {
   subject: Subject;
@@ -38,13 +43,20 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
   const Icon = getIconComponent(subject.iconName);
 
   return (
-    <section aria-labelledby={`subject-title-${subject.name.replace(/\s+/g, '-')}`}>
+    <section aria-labelledby={`subject-title-${subject.id}`}>
       <Card className="overflow-hidden bg-card/80 backdrop-blur-sm">
         <CardHeader className="bg-muted/50 border-b">
-          <CardTitle id={`subject-title-${subject.name.replace(/\s+/g, '-')}`} className="flex items-center gap-3 text-2xl font-semibold">
-            <Icon className="h-6 w-6 text-primary" />
-            {subject.name}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle id={`subject-title-${subject.id}`} className="flex items-center gap-3 text-2xl font-semibold">
+              <Icon className="h-6 w-6 text-primary" />
+              {subject.name}
+            </CardTitle>
+            <EditSubjectDialog subject={subject}>
+                <button className="p-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                    <Pencil className="h-4 w-4" />
+                </button>
+            </EditSubjectDialog>
+          </div>
         </CardHeader>
         <CardContent className="p-4 md:p-6">
           {sortedTeachers.length > 0 ? (
