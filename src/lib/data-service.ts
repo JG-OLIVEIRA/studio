@@ -151,7 +151,7 @@ export async function getSubjects(): Promise<Subject[]> {
         upvotes: review.upvotes,
         downvotes: review.downvotes,
         // Garante que a data seja uma string no formato ISO, que é segura para serialização
-        createdAt: review.created_at.toISOString(),
+        createdAt: (review.created_at || new Date()).toISOString(),
       });
       return acc;
     }, {} as Record<number, Review[]>);
