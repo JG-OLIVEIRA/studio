@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { Teacher } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Button } from './ui/button';
+import StarRating from './star-rating';
+import { Separator } from './ui/separator';
 
 interface AIReviewInsightsProps {
   teacher: Teacher;
@@ -22,17 +24,22 @@ interface AIReviewInsightsProps {
   disabled: boolean;
 }
 
+interface InsightsData {
+    insights: string;
+    passWithoutStudyingChance: number;
+}
+
 export default function AIReviewInsights({ teacher, children, disabled }: AIReviewInsightsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [insights, setInsights] = useState<string | null>(null);
+  const [data, setData] = useState<InsightsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleOpenChange = async (open: boolean) => {
     if (disabled) return;
     setIsOpen(open);
-    if (open && !insights) {
+    if (open && !data) {
       setIsLoading(true);
       setError(null);
       try {
@@ -41,7 +48,10 @@ export default function AIReviewInsights({ teacher, children, disabled }: AIRevi
           subject: teacher.subject || 'Geral',
           reviews: teacher.reviews.map(r => r.text),
         });
-        setInsights(result.insights);
+        setData({
+            insights: result.insights,
+            passWithoutStudyingChance: result.passWithoutStudyingChance
+        });
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : 'Ocorreu um erro desconhecido.';
         setError(errorMessage);
@@ -69,20 +79,32 @@ export default function AIReviewInsights({ teacher, children, disabled }: AIRevi
             Um resumo gerado por IA do feedback dos alunos para {teacher.name}.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
+        <div className="py-4 space-y-4">
           {isLoading && (
             <div className="space-y-3">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-3/4" />
+              <Separator />
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-5 w-1/3" />
             </div>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}
-          {insights && (
-            <div className="prose prose-sm max-w-none text-foreground/90 flex items-start gap-3 rounded-lg border bg-secondary/50 p-4">
-               <Bot className="h-8 w-8 flex-shrink-0 text-primary mt-1" />
-               <p className="m-0">{insights}</p>
-            </div>
+          {data && (
+            <>
+              <div className="prose prose-sm max-w-none text-foreground/90 flex items-start gap-3 rounded-lg border bg-secondary/50 p-4">
+                 <Bot className="h-8 w-8 flex-shrink-0 text-primary mt-1" />
+                 <p className="m-0">{data.insights}</p>
+              </div>
+              <Separator />
+              <div className="text-center space-y-2">
+                <h4 className="font-semibold text-sm text-muted-foreground">Chance de Passar Sem Estudar™</h4>
+                <div className="flex justify-center">
+                    <StarRating rating={data.passWithoutStudyingChance} />
+                </div>
+              </div>
+            </>
           )}
         </div>
       </DialogContent>

@@ -5,7 +5,7 @@
  *
  * generateReviewInsights - A function that generates AI insights from teacher reviews.
  * GenerateReviewInsightsInput - The input type for the generateReviewInsights function.
- * GenerateReviewInsightsOutput - The return type for the generateReviewInsights function.
+ * GenerateReviewInsightsOutput - The return type for the generateReviewinsights function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -19,7 +19,18 @@ const GenerateReviewInsightsInputSchema = z.object({
 export type GenerateReviewInsightsInput = z.infer<typeof GenerateReviewInsightsInputSchema>;
 
 const GenerateReviewInsightsOutputSchema = z.object({
-  insights: z.string().describe('AI-generated insights from the student reviews.'),
+  insights: z
+    .string()
+    .describe(
+      'AI-generated insights from the student reviews, written in a humorous and funny style.'
+    ),
+  passWithoutStudyingChance: z
+    .number()
+    .min(1)
+    .max(5)
+    .describe(
+      'A score from 1 to 5 indicating the chance of a student passing with this teacher without studying, based on the reviews.'
+    ),
 });
 export type GenerateReviewInsightsOutput = z.infer<typeof GenerateReviewInsightsOutputSchema>;
 
@@ -31,17 +42,20 @@ const prompt = ai.definePrompt({
   name: 'generateReviewInsightsPrompt',
   input: {schema: GenerateReviewInsightsInputSchema},
   output: {schema: GenerateReviewInsightsOutputSchema},
-  prompt: `Você é um assistente de IA encarregado de gerar insights a partir de avaliações de alunos para professores.
+  prompt: `Você é um assistente de IA com um ótimo senso de humor, encarregado de analisar avaliações de alunos para professores.
 
-  Nome do Professor: {{{teacherName}}}
+  Professor: {{{teacherName}}}
   Matéria: {{{subject}}}
   Avaliações:
   {{#each reviews}}
   - {{{this}}}
   {{/each}}
 
-  Gere um resumo conciso dos principais pontos fortes e fracos destacados nas avaliações. Concentre-se em fornecer insights práticos para o professor.
-  A resposta deve ter menos de 200 palavras e ser em português do Brasil.
+  Sua missão é dupla:
+  1.  Gerar um resumo conciso (menos de 200 palavras) e ENGRAÇADO sobre os pontos fortes e fracos do professor. Use um tom divertido, como se estivesse contando um segredo para um colega.
+  2.  Com base nas avaliações, calcule a "Chance de Passar Sem Estudar". Esta é uma nota de 1 a 5, onde 1 é "esquece, precisa virar um monge tibetano nos estudos" e 5 é "dá pra passar jogando videogame o semestre todo". Seja honesto, mas divertido na sua avaliação.
+
+  A resposta deve ser em português do Brasil.
   `,
 });
 
