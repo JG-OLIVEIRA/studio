@@ -29,6 +29,8 @@ import { deleteReview, upvoteReview, downvoteReview } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useTransition } from 'react';
 import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
   
 interface ViewReviewsDialogProps {
     teacher: Teacher;
@@ -99,7 +101,12 @@ export function ViewReviewsDialog({ teacher, children, disabled }: ViewReviewsDi
                         {sortedReviews.length > 0 ? sortedReviews.map((review) => (
                             <div key={review.id} className="group p-4 border rounded-lg bg-muted/50 relative">
                                 <div className="flex items-start justify-between mb-2">
-                                    <StarRating rating={review.rating} />
+                                    <div className="flex items-center gap-2">
+                                        <StarRating rating={review.rating} />
+                                        <span className="text-xs text-muted-foreground">
+                                            {formatDistanceToNow(new Date(review.createdAt), { addSuffix: true, locale: ptBR })}
+                                        </span>
+                                    </div>
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">

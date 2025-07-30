@@ -6,6 +6,7 @@ export interface Review {
   text: string;
   upvotes: number;
   downvotes: number;
+  createdAt: string;
 }
 
 export interface Teacher {

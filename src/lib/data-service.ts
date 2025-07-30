@@ -66,7 +66,8 @@ async function initializeDatabase() {
                 rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
                 teacher_id INTEGER NOT NULL,
                 upvotes INTEGER NOT NULL DEFAULT 0,
-                downvotes INTEGER NOT NULL DEFAULT 0
+                downvotes INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
             );
         `);
 
@@ -143,6 +144,7 @@ export async function getSubjects(): Promise<Subject[]> {
         text: review.text,
         upvotes: review.upvotes,
         downvotes: review.downvotes,
+        createdAt: review.created_at,
       });
       return acc;
     }, {} as Record<number, Review[]>);
