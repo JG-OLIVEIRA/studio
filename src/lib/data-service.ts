@@ -166,12 +166,13 @@ export async function getSubjects(): Promise<Subject[]> {
       LEFT JOIN
         reviews r ON t.id = r.teacher_id
       ORDER BY
-        s.name, t.name;
+        s.name, t.name, r.created_at DESC;
     `;
 
     const result = await client.query(query);
 
     const subjectsMap: Map<number, Subject> = new Map();
+    const teachersMap: Map<number, Teacher> = new Map();
 
     for (const row of result.rows) {
       // Get or create Subject
@@ -188,7 +189,7 @@ export async function getSubjects(): Promise<Subject[]> {
 
       if (row.teacher_id) {
         // Get or create Teacher
-        let teacher = subject.teachers.find(t => t.id === row.teacher_id);
+        let teacher = teachersMap.get(row.teacher_id);
         if (!teacher) {
           teacher = {
             id: row.teacher_id,
@@ -196,19 +197,23 @@ export async function getSubjects(): Promise<Subject[]> {
             subject: subject.name,
             reviews: [],
           };
+          teachersMap.set(row.teacher_id, teacher);
           subject.teachers.push(teacher);
         }
 
         if (row.review_id) {
           // Add review
-          teacher.reviews.push({
-            id: row.review_id,
-            text: row.review_text,
-            rating: row.review_rating,
-            upvotes: row.review_upvotes,
-            downvotes: row.review_downvotes,
-            createdAt: (row.review_created_at || new Date()).toISOString(),
-          });
+          const existingReview = teacher.reviews.find(r => r.id === row.review_id);
+          if (!existingReview) {
+            teacher.reviews.push({
+              id: row.review_id,
+              text: row.review_text,
+              rating: row.review_rating,
+              upvotes: row.review_upvotes,
+              downvotes: row.review_downvotes,
+              createdAt: (row.review_created_at || new Date()).toISOString(),
+            });
+          }
         }
       }
     }
