@@ -26,7 +26,7 @@ import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Teacher } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Input } from './ui/input';
+import { Combobox } from './ui/combobox';
 
 const formSchema = z.object({
   teacherName: z.string().trim()
@@ -76,6 +76,14 @@ export function AddTeacherOrReviewDialog({
     return allSubjectNames.map(name => ({ value: name, label: name }));
   }, [allSubjectNames]);
 
+  const teacherOptions = useMemo(() => {
+    if (!subjectName) return [];
+    return allTeachers
+        .filter(teacher => teacher.subject === subjectName)
+        .map(teacher => ({ value: teacher.name, label: teacher.name }))
+        .sort((a,b) => a.label.localeCompare(b.label));
+  }, [subjectName, allTeachers]);
+
 
   const handleSubmit = (values: FormValues) => {
     onSubmit(values);
@@ -108,7 +116,10 @@ export function AddTeacherOrReviewDialog({
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel>Matéria</FormLabel>
-                             <Select onValueChange={field.onChange} value={field.value}>
+                             <Select onValueChange={(value) => {
+                                 field.onChange(value);
+                                 form.setValue('teacherName', ''); // Reset teacher when subject changes
+                             }} value={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecione a matéria" />
@@ -131,7 +142,14 @@ export function AddTeacherOrReviewDialog({
                             <FormItem>
                                 <FormLabel>Nome do Professor</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Ex: João da Silva" {...field} />
+                                    <Combobox
+                                        options={teacherOptions}
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        placeholder="Selecione ou crie..."
+                                        createLabel="Criar novo professor:"
+                                        disabled={!subjectName}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
