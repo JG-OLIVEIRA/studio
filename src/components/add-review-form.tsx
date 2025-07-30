@@ -1,0 +1,120 @@
+"use client"
+
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Star } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+const reviewSchema = z.object({
+  author: z.string().min(2, "Name must be at least 2 characters."),
+  text: z.string().min(10, "Review must be at least 10 characters."),
+  rating: z.number().min(1).max(5),
+})
+
+type ReviewFormValues = z.infer<typeof reviewSchema>
+
+interface AddReviewFormProps {
+  onSubmit: (data: ReviewFormValues) => void;
+  onClose: () => void;
+}
+
+export function AddReviewForm({ onSubmit, onClose }: AddReviewFormProps) {
+  const form = useForm<ReviewFormValues>({
+    resolver: zodResolver(reviewSchema),
+    defaultValues: {
+      author: "",
+      text: "",
+      rating: 0,
+    },
+  })
+  const [hoverRating, setHoverRating] = useState(0)
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="author"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Your Name</FormLabel>
+              <FormControl>
+                <Input placeholder="John Doe" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="text"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Your Review</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Tell us what you think about this teacher..."
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="rating"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Rating</FormLabel>
+              <FormControl>
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, index) => {
+                    const ratingValue = index + 1
+                    return (
+                      <button
+                        type="button"
+                        key={ratingValue}
+                        onClick={() => field.onChange(ratingValue)}
+                        onMouseEnter={() => setHoverRating(ratingValue)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        className="p-0 bg-transparent border-none"
+                      >
+                        <Star
+                          className={cn(
+                            "h-6 w-6 cursor-pointer",
+                            ratingValue <= (hoverRating || field.value)
+                              ? "text-primary fill-current"
+                              : "text-muted/50"
+                          )}
+                        />
+                      </button>
+                    )
+                  })}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+            <Button type="submit">Submit Review</Button>
+        </div>
+      </form>
+    </Form>
+  )
+}

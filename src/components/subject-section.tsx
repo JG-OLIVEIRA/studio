@@ -1,10 +1,17 @@
-import type { Subject } from '@/lib/types';
+import type { Subject, Teacher } from '@/lib/types';
 import TeacherCard from '@/components/teacher-card';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface SubjectSectionProps {
   subject: Subject;
 }
+
+const calculateAverageRating = (teacher: Teacher) => {
+  if (teacher.reviews.length === 0) return 0;
+  const total = teacher.reviews.reduce((acc, review) => acc + review.rating, 0);
+  return total / teacher.reviews.length;
+};
+
 
 export default function SubjectSection({ subject }: SubjectSectionProps) {
   return (
@@ -19,7 +26,11 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
         <CardContent className="p-4 md:p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {subject.teachers
-              .sort((a, b) => b.rating - a.rating)
+              .map(teacher => ({
+                ...teacher,
+                averageRating: calculateAverageRating(teacher),
+              }))
+              .sort((a, b) => b.averageRating - a.averageRating)
               .map((teacher) => (
               <TeacherCard
                 key={teacher.id}

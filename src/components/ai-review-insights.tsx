@@ -14,7 +14,6 @@ import { getAIInsights } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Teacher } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
-import { Badge } from './ui/badge';
 
 interface AIReviewInsightsProps {
   teacher: Teacher;
@@ -37,7 +36,7 @@ export default function AIReviewInsights({ teacher, children }: AIReviewInsights
         const result = await getAIInsights({
           teacherName: teacher.name,
           subject: teacher.subject || 'General',
-          reviews: teacher.reviews,
+          reviews: teacher.reviews.map(r => r.text),
         });
         setInsights(result.insights);
       } catch (e) {

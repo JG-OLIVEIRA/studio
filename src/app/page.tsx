@@ -15,42 +15,82 @@ const subjectsData: Subject[] = [
     name: 'Mathematics',
     icon: Sigma,
     teachers: [
-      { id: 1, name: 'Dr. Evelyn Reed', rating: 4.8, reviews: ["Dr. Reed makes calculus understandable.", "Best math teacher I've ever had.", "Her explanations are crystal clear."] },
-      { id: 2, name: 'Mr. Alan Turing', rating: 4.5, reviews: ["Great at breaking down complex problems.", "Sometimes moves a bit too fast."] },
-      { id: 3, name: 'Ms. Julia Robinson', rating: 4.6, reviews: ["Very patient and always willing to help.", "Her passion for math is contagious."] },
+      { id: 1, name: 'Dr. Evelyn Reed', reviews: [
+          { id: 1, author: 'Student A', rating: 5, text: "Dr. Reed makes calculus understandable." },
+          { id: 2, author: 'Student B', rating: 5, text: "Best math teacher I've ever had." },
+          { id: 3, author: 'Student C', rating: 4, text: "Her explanations are crystal clear." }
+      ] },
+      { id: 2, name: 'Mr. Alan Turing', reviews: [
+        { id: 4, author: 'Student D', rating: 5, text: "Great at breaking down complex problems." },
+        { id: 5, author: 'Student E', rating: 4, text: "Sometimes moves a bit too fast." }
+      ] },
+      { id: 3, name: 'Ms. Julia Robinson', reviews: [
+        { id: 6, author: 'Student F', rating: 5, text: "Very patient and always willing to help." },
+        { id: 7, author: 'Student G', rating: 4, text: "Her passion for math is contagious." }
+      ] },
     ],
   },
   {
     name: 'Science',
     icon: FlaskConical,
     teachers: [
-      { id: 4, name: 'Prof. Marie Curie', rating: 4.9, reviews: ["Inspirational and brilliant.", "Lab sessions are the best part of the week.", "She pushes us to think critically."] },
-      { id: 5, name: 'Dr. Carl Sagan', rating: 4.7, reviews: ["Makes you fall in love with the cosmos.", "His lectures are like watching a documentary."] },
+      { id: 4, name: 'Prof. Marie Curie', reviews: [
+          { id: 8, author: 'Student H', rating: 5, text: "Inspirational and brilliant." },
+          { id: 9, author: 'Student I', rating: 5, text: "Lab sessions are the best part of the week." },
+          { id: 10, author: 'Student J', rating: 5, text: "She pushes us to think critically." }
+      ] },
+      { id: 5, name: 'Dr. Carl Sagan', reviews: [
+        { id: 11, author: 'Student K', rating: 5, text: "Makes you fall in love with the cosmos." },
+        { id: 12, author: 'Student L', rating: 4, text: "His lectures are like watching a documentary." }
+      ] },
     ],
   },
   {
     name: 'History',
     icon: ScrollText,
     teachers: [
-      { id: 6, name: 'Dr. Howard Zinn', rating: 4.4, reviews: ["Offers a unique perspective on history.", "The reading list is heavy but worth it."] },
-      { id: 7, name: 'Ms. Mary Beard', rating: 4.9, reviews: ["Brings ancient Rome to life!", "Incredibly knowledgeable and engaging.", "Her storytelling is top-notch."] },
+      { id: 6, name: 'Dr. Howard Zinn', reviews: [
+        { id: 13, author: 'Student M', rating: 5, text: "Offers a unique perspective on history." },
+        { id: 14, author: 'Student N', rating: 4, text: "The reading list is heavy but worth it." }
+      ] },
+      { id: 7, name: 'Ms. Mary Beard', reviews: [
+        { id: 15, author: 'Student O', rating: 5, text: "Brings ancient Rome to life!" },
+        { id: 16, author: 'Student P', rating: 5, text: "Incredibly knowledgeable and engaging." },
+        { id: 17, author: 'Student Q', rating: 5, text: "Her storytelling is top-notch." }
+      ] },
     ],
   },
   {
     name: 'Literature',
     icon: BookOpen,
     teachers: [
-      { id: 8, name: 'Mr. William Shakespeare', rating: 4.2, reviews: ["A bit dramatic, but knows his stuff.", "Challenging but rewarding class."] },
-      { id: 9, name: 'Ms. Virginia Woolf', rating: 4.8, reviews: ["Deep thinker and fantastic discussion leader.", "Opened my eyes to new ways of reading."] },
-      { id: 10, name: 'Prof. Toni Morrison', rating: 4.9, reviews: ["A true master of the craft.", "I'll never forget the lessons learned in her class.", "She is a legend."] },
+      { id: 8, name: 'Mr. William Shakespeare', reviews: [
+        { id: 18, author: 'Student R', rating: 4, text: "A bit dramatic, but knows his stuff." },
+        { id: 19, author: 'Student S', rating: 4, text: "Challenging but rewarding class." }
+      ] },
+      { id: 9, name: 'Ms. Virginia Woolf', reviews: [
+        { id: 20, author: 'Student T', rating: 5, text: "Deep thinker and fantastic discussion leader." },
+        { id: 21, author: 'Student U', rating: 5, text: "Opened my eyes to new ways of reading." }
+      ] },
+      { id: 10, name: 'Prof. Toni Morrison', reviews: [
+        { id: 22, author: 'Student V', rating: 5, text: "A true master of the craft." },
+        { id: 23, author: 'Student W', rating: 5, text: "I'll never forget the lessons learned in her class." },
+        { id: 24, author: 'Student X', rating: 5, text: "She is a legend." }
+      ] },
     ],
   },
   {
     name: 'Art',
     icon: Palette,
     teachers: [
-      { id: 11, name: 'Mr. Leonardo da Vinci', rating: 4.9, reviews: ["A true Renaissance man. Teaches more than just painting.", "His attention to detail is inspiring."] },
-      { id: 12, name: 'Ms. Frida Kahlo', rating: 4.7, reviews: ["Encourages us to find our own voice.", "Very passionate and expressive."] },
+      { id: 11, name: 'Mr. Leonardo da Vinci', reviews: [
+        { id: 25, author: 'Student Y', rating: 5, text: "A true Renaissance man. Teaches more than just painting." },
+        { id: 26, author: 'Student Z', rating: 5, text: "His attention to detail is inspiring." }
+      ] },
+      { id: 12, name: 'Ms. Frida Kahlo', reviews: [
+        { id: 27, author: 'Student AA', rating: 5, text: "Encourages us to find our own voice." },
+        { id: 28, author: 'Student BB', rating: 4, text: "Very passionate and expressive." }
+      ] },
     ],
   },
 ];
