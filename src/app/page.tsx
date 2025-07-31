@@ -2,13 +2,13 @@
 import { GraduationCap, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { getTeachersWithGlobalStats } from '@/lib/data-service';
-import TeacherListItem from '@/components/teacher-list-item';
 import { Button } from '@/components/ui/button';
 import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dialog';
 import { handleAddTeacherOrReview } from './actions';
 import { getAllTeachers } from './actions';
 import { getSubjects } from '@/lib/data-service';
 import WelcomeReviewDialog from '@/components/welcome-review-dialog';
+import TeacherListClient from '@/components/teacher-list-client';
 
 export default async function TeachersPage() {
   // Fetch all data in parallel
@@ -20,19 +20,16 @@ export default async function TeachersPage() {
   
   const allSubjectNames = subjects.map(s => s.name).sort((a,b) => a.localeCompare(b));
 
-  // Sort teachers alphabetically by name
-  const sortedTeachers = teachers.sort((a, b) => a.name.localeCompare(b.name));
-
   // Find a teacher to prompt the user for a review.
   // Priority 1: Teachers with zero reviews.
   // Priority 2: Teachers with few reviews (less than 2).
-  const teachersWithNoReviews = sortedTeachers.filter(t => t.reviews.length === 0);
+  const teachersWithNoReviews = teachers.filter(t => t.reviews.length === 0);
   let teacherToPrompt = null;
 
   if (teachersWithNoReviews.length > 0) {
     teacherToPrompt = teachersWithNoReviews[Math.floor(Math.random() * teachersWithNoReviews.length)];
   } else {
-    const teachersWithFewReviews = sortedTeachers.filter(t => t.reviews.length < 2);
+    const teachersWithFewReviews = teachers.filter(t => t.reviews.length < 2);
      if (teachersWithFewReviews.length > 0) {
         teacherToPrompt = teachersWithFewReviews[Math.floor(Math.random() * teachersWithFewReviews.length)];
      }
@@ -74,18 +71,7 @@ export default async function TeachersPage() {
             </div>
         </header>
         
-        <div className="space-y-4">
-          {sortedTeachers.length > 0 ? (
-            sortedTeachers.map((teacher, index) => (
-              <TeacherListItem key={teacher.id} teacher={teacher} rank={index + 1} />
-            ))
-          ) : (
-            <div className="text-center text-muted-foreground py-12 border-dashed border-2 rounded-lg">
-              <h2 className="text-xl font-semibold">Nenhum professor encontrado.</h2>
-              <p className="mt-2">Seja o primeiro a adicionar uma avaliação e ajudar a comunidade!</p>
-            </div>
-          )}
-        </div>
+        <TeacherListClient initialTeachers={teachers} />
 
         <footer className="text-center mt-16 pb-8">
             <p className="text-sm text-muted-foreground">
