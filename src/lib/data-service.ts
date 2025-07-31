@@ -187,16 +187,15 @@ export async function getSubjects(): Promise<Subject[]> {
                 s.name as subject_name,
                 t.id as teacher_id,
                 t.name as teacher_name,
-                r.id as review_id,
-                r.text as review_text,
-                r.rating as review_rating,
-                r.upvotes as review_upvotes,
-                r.downvotes as review_downvotes,
-                r.created_at as review_created_at
+                tr.id as review_id,
+                tr.text as review_text,
+                tr.rating as review_rating,
+                tr.upvotes as review_upvotes,
+                tr.downvotes as review_downvotes,
+                tr.created_at as review_created_at
             FROM subjects s
             LEFT JOIN (
                 SELECT * FROM reviews 
-                LEFT JOIN teachers ON reviews.teacher_id = teachers.id
             ) AS tr ON s.id = tr.subject_id
             LEFT JOIN teachers t ON tr.teacher_id = t.id
             ORDER BY s.name, t.name;
