@@ -120,7 +120,7 @@ export async function getSubjects(): Promise<Subject[]> {
             FROM subjects s
             LEFT JOIN (
                 SELECT 
-                    reviews.id, 
+                    reviews.id,
                     reviews.text, 
                     reviews.rating,
                     reviews.upvotes, 
