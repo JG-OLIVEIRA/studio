@@ -66,10 +66,31 @@ export function AddTeacherOrReviewDialog({
       reviewRating: 0,
     },
   });
+  
+  const selectedTeacherName = form.watch('teacherName');
+  const selectedTeacher = useMemo(() => {
+    return allTeachers.find(t => t.name === selectedTeacherName);
+  }, [selectedTeacherName, allTeachers]);
 
   const subjectOptions = useMemo(() => {
-    return allSubjectNames.map(name => ({ value: name, label: name })).sort((a, b) => a.label.localeCompare(b.label));
-  }, [allSubjectNames]);
+    const allOptions = allSubjectNames.map(name => ({ value: name, label: name }));
+
+    if (selectedTeacher && selectedTeacher.subjects) {
+      const teacherSubjects = new Set(selectedTeacher.subjects);
+      
+      const taught = allOptions
+        .filter(opt => teacherSubjects.has(opt.value))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      const notTaught = allOptions
+        .filter(opt => !teacherSubjects.has(opt.value))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      return [...taught, ...notTaught];
+    }
+
+    return allOptions.sort((a, b) => a.label.localeCompare(b.label));
+  }, [allSubjectNames, selectedTeacher]);
 
   const teacherOptions = useMemo(() => {
     return allTeachers
@@ -77,10 +98,6 @@ export function AddTeacherOrReviewDialog({
         .sort((a,b) => a.label.localeCompare(b.label));
   }, [allTeachers]);
 
-  const selectedTeacherName = form.watch('teacherName');
-  const selectedTeacher = useMemo(() => {
-    return allTeachers.find(t => t.name === selectedTeacherName);
-  }, [selectedTeacherName, allTeachers]);
 
   // Effect to pre-select subjects when a teacher is chosen
   useEffect(() => {
