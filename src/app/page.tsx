@@ -23,17 +23,21 @@ export default async function TeachersPage() {
   // Find a teacher to prompt the user for a review.
   // Priority 1: Teachers with zero reviews.
   // Priority 2: Teachers with few reviews (less than 2).
-  const teachersWithNoReviews = teachers.filter(t => t.reviews.length === 0);
   let teacherToPrompt = null;
-
+  
+  const teachersWithNoReviews = teachers.filter(t => t.reviews.length === 0);
   if (teachersWithNoReviews.length > 0) {
+    // Pick a random teacher with no reviews
     teacherToPrompt = teachersWithNoReviews[Math.floor(Math.random() * teachersWithNoReviews.length)];
   } else {
-    const teachersWithFewReviews = teachers.filter(t => t.reviews.length < 2);
-     if (teachersWithFewReviews.length > 0) {
-        teacherToPrompt = teachersWithFewReviews[Math.floor(Math.random() * teachersWithFewReviews.length)];
-     }
+    // If all teachers have reviews, find one with less than 2
+    const teachersWithFewReviews = teachers.filter(t => t.reviews.length > 0 && t.reviews.length < 2);
+    if (teachersWithFewReviews.length > 0) {
+      // Pick a random teacher with few reviews
+      teacherToPrompt = teachersWithFewReviews[Math.floor(Math.random() * teachersWithFewReviews.length)];
+    }
   }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,7 +45,6 @@ export default async function TeachersPage() {
       {teacherToPrompt && (
         <WelcomeReviewDialog 
             teacherToPrompt={teacherToPrompt}
-            allSubjectNames={allSubjectNames}
             onSubmit={handleAddTeacherOrReview}
         />
       )}
@@ -71,7 +74,7 @@ export default async function TeachersPage() {
             </div>
         </header>
         
-        <TeacherListClient initialTeachers={teachers} />
+        <TeacherListClient initialTeachers={teachers.sort((a, b) => a.name.localeCompare(b.name))} />
 
         <footer className="text-center mt-16 pb-8">
             <p className="text-sm text-muted-foreground">

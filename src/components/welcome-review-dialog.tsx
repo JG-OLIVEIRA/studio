@@ -41,7 +41,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface WelcomeReviewDialogProps {
     teacherToPrompt: Teacher;
-    allSubjectNames: string[];
     onSubmit: (data: Omit<FormValues, 'reviewAuthor'>) => Promise<void>;
 }
 
@@ -49,7 +48,6 @@ const SESSION_STORAGE_KEY = 'welcomePromptShown';
 
 export default function WelcomeReviewDialog({ 
     teacherToPrompt,
-    allSubjectNames,
     onSubmit,
 }: WelcomeReviewDialogProps) {
   const [open, setOpen] = useState(false);
@@ -59,7 +57,8 @@ export default function WelcomeReviewDialog({
   useEffect(() => {
     // Check if the prompt has already been shown in this session
     const hasBeenShown = sessionStorage.getItem(SESSION_STORAGE_KEY);
-    if (!hasBeenShown) {
+    // Also check if the teacher has subjects to review
+    if (!hasBeenShown && teacherToPrompt.subjects && teacherToPrompt.subjects.size > 0) {
       // Show the dialog after a short delay
       const timer = setTimeout(() => {
         setOpen(true);
@@ -67,7 +66,7 @@ export default function WelcomeReviewDialog({
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [teacherToPrompt]);
 
 
   const form = useForm<FormValues>({
@@ -81,8 +80,11 @@ export default function WelcomeReviewDialog({
   });
 
   const subjectOptions = useMemo(() => {
-    return allSubjectNames.map(name => ({ value: name, label: name })).sort((a, b) => a.label.localeCompare(b.label));
-  }, [allSubjectNames]);
+    if (!teacherToPrompt.subjects) return [];
+    return Array.from(teacherToPrompt.subjects)
+        .map(name => ({ value: name, label: name }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+  }, [teacherToPrompt.subjects]);
 
 
   const handleSubmit = async (values: FormValues) => {
@@ -114,6 +116,11 @@ export default function WelcomeReviewDialog({
         });
     }
     setOpen(isOpen);
+  }
+  
+  // Do not render the dialog if there are no subjects to choose from
+  if (subjectOptions.length === 0) {
+    return null;
   }
 
   return (
