@@ -47,9 +47,9 @@ export async function initializeDatabase() {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
-            console.log("Iniciando verificação e migração do banco de dados...");
+            console.log("Iniciando verificação do banco de dados...");
 
-            // 1. Criar tabelas com o novo esquema, se não existirem
+            // 1. Criar tabelas com o esquema correto, se não existirem
             await client.query(`
                 CREATE TABLE IF NOT EXISTS subjects (
                     id SERIAL PRIMARY KEY,
@@ -75,80 +75,6 @@ export async function initializeDatabase() {
                 );
             `);
             
-            const teachersTableHasSubjectId = await client.query(`
-                SELECT 1 FROM information_schema.columns 
-                WHERE table_name='teachers' AND column_name='subject_id';
-            `).then(res => res.rowCount > 0);
-
-            if (teachersTableHasSubjectId) {
-                console.log("Detectado esquema antigo. Iniciando migração de dados...");
-                
-                // Renomear tabelas antigas
-                await client.query('ALTER TABLE IF EXISTS reviews RENAME TO reviews_old;');
-                await client.query('ALTER TABLE IF EXISTS teachers RENAME TO teachers_old;');
-
-                // Criar novas tabelas com o esquema correto
-                await client.query(`
-                    CREATE TABLE IF NOT EXISTS teachers (
-                        id SERIAL PRIMARY KEY,
-                        name VARCHAR(255) UNIQUE NOT NULL
-                    );
-                `);
-                 await client.query(`
-                    CREATE TABLE IF NOT EXISTS reviews (
-                        id SERIAL PRIMARY KEY,
-                        text TEXT NOT NULL,
-                        rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-                        teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
-                        subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
-                        upvotes INTEGER NOT NULL DEFAULT 0,
-                        downvotes INTEGER NOT NULL DEFAULT 0,
-                        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-                    );
-                `);
-
-                // Migrar professores primeiro
-                await client.query(`
-                    INSERT INTO teachers (name)
-                    SELECT DISTINCT name FROM teachers_old
-                    ON CONFLICT (name) DO NOTHING;
-                `);
-                
-                // Agora migrar avaliações, associando com os novos IDs
-                await client.query(`
-                    INSERT INTO reviews (id, text, rating, teacher_id, subject_id, upvotes, downvotes, created_at)
-                    SELECT 
-                        r_old.id, 
-                        r_old.text, 
-                        r_old.rating, 
-                        t_new.id AS teacher_id,
-                        t_old.subject_id,
-                        r_old.upvotes,
-                        r_old.downvotes,
-                        r_old.created_at
-                    FROM reviews_old r_old
-                    JOIN teachers_old t_old ON r_old.teacher_id = t_old.id
-                    JOIN teachers t_new ON t_old.name = t_new.name;
-                `);
-
-                // Remover tabelas antigas
-                await client.query('DROP TABLE IF EXISTS reviews_old;');
-                await client.query('DROP TABLE IF EXISTS teachers_old;');
-
-                console.log("Migração de esquema concluída com sucesso.");
-            }
-
-            // Adicionar a coluna created_at se ela não existir
-            const reviewsHasCreatedAt = await client.query(`
-                SELECT 1 FROM information_schema.columns
-                WHERE table_name='reviews' AND column_name='created_at';
-            `).then(res => res.rowCount > 0);
-
-            if (!reviewsHasCreatedAt) {
-                console.log("Adicionando coluna 'created_at' à tabela 'reviews'.");
-                await client.query('ALTER TABLE reviews ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL');
-            }
-
             // Sincronizar matérias do currículo
             const dbSubjectsResult = await client.query('SELECT name FROM subjects');
             const dbSubjectNames = dbSubjectsResult.rows.map(s => s.name);
@@ -161,10 +87,10 @@ export async function initializeDatabase() {
             }
 
             await client.query('COMMIT');
-            console.log("Banco de dados inicializado e migrado com sucesso.");
+            console.log("Banco de dados verificado com sucesso.");
         } catch (error) {
             await client.query('ROLLBACK');
-            console.error("Erro durante a inicialização/migração do banco de dados:", error);
+            console.error("Erro durante a inicialização do banco de dados:", error);
             // Redefinir a promessa em caso de erro para permitir nova tentativa
             initializationPromise = null;
             throw new Error("Não foi possível inicializar o banco de dados.");
@@ -181,6 +107,7 @@ export async function getSubjects(): Promise<Subject[]> {
     
     const client = await pool.connect();
     try {
+        // Query to fetch all subjects, and for each subject, join teachers who have reviews for it.
         const query = `
             SELECT 
                 s.id as subject_id,
@@ -194,14 +121,18 @@ export async function getSubjects(): Promise<Subject[]> {
                 tr.downvotes as review_downvotes,
                 tr.created_at as review_created_at
             FROM subjects s
-            LEFT JOIN reviews tr ON s.id = tr.subject_id
+            LEFT JOIN (
+                reviews
+                JOIN teachers ON reviews.teacher_id = teachers.id
+            ) tr ON s.id = tr.subject_id
             LEFT JOIN teachers t ON tr.teacher_id = t.id
             ORDER BY s.name, t.name;
         `;
-
+        
         const result = await client.query(query);
 
         const subjectsMap: Map<number, Subject> = new Map();
+        // Pre-populate the map with all subjects to include those without teachers/reviews
         const allSubjectsResult = await client.query('SELECT id, name FROM subjects ORDER BY name');
         for (const subjectRow of allSubjectsResult.rows) {
             subjectsMap.set(subjectRow.id, {
@@ -220,7 +151,9 @@ export async function getSubjects(): Promise<Subject[]> {
             const subject = subjectsMap.get(row.subject_id);
             if (!subject) continue;
             
+            // This row has a teacher associated with the subject
             if (row.teacher_id) {
+                // Unique key for a teacher within a specific subject
                 const teacherKey = `${row.teacher_id}-${row.subject_id}`;
                 let teacher = teachersMap.get(teacherKey);
 
@@ -228,7 +161,7 @@ export async function getSubjects(): Promise<Subject[]> {
                     teacher = {
                         id: row.teacher_id,
                         name: row.teacher_name,
-                        subject: subject.name,
+                        subject: subject.name, // The subject context for this teacher instance
                         reviews: [],
                         averageRating: 0,
                     };
@@ -236,6 +169,7 @@ export async function getSubjects(): Promise<Subject[]> {
                     subject.teachers.push(teacher);
                 }
 
+                // If there's a review in this row, add it (avoiding duplicates)
                 if (row.review_id && !teacher.reviews.some(r => r.id === row.review_id)) {
                     teacher.reviews.push({
                         id: row.review_id,
@@ -249,6 +183,7 @@ export async function getSubjects(): Promise<Subject[]> {
             }
         }
         
+        // Calculate average ratings after all reviews are processed
         subjectsMap.forEach(subject => {
             subject.teachers.forEach(teacher => {
                 teacher.averageRating = calculateAverageRating(teacher.reviews);
