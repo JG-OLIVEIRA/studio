@@ -27,7 +27,7 @@ import { Star, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Combobox } from './ui/combobox';
 import { useToast } from '@/hooks/use-toast';
-import { MultiSelect } from './ui/multi-select';
+import { ScrollArea } from './ui/scroll-area';
 
 const formSchema = z.object({
   teacherName: z.string().trim()
@@ -111,59 +111,75 @@ export function AddTeacherOrReviewDialog({
                 Adicionar Avaliação
             </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className="sm:max-w-xl">
             <DialogHeader>
             <DialogTitle>Adicionar nova avaliação</DialogTitle>
             <DialogDescription>
-                Selecione as matérias e o professor. A avaliação será aplicada a cada matéria selecionada.
+                Selecione o professor e a(s) matéria(s) que ele leciona. A avaliação será aplicada a cada matéria selecionada.
             </DialogDescription>
             </DialogHeader>
             <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="subjectNames"
-                        render={({ field }) => (
+                <FormField
+                    control={form.control}
+                    name="teacherName"
+                    render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Matéria(s)</FormLabel>
-                            <MultiSelect
-                                options={subjectOptions}
-                                placeholder="Selecione as matérias"
-                                selected={field.value}
-                                onChange={field.onChange}
-                            />
+                            <FormLabel>Professor</FormLabel>
+                            <FormControl>
+                                <Combobox
+                                    options={teacherOptions}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    placeholder="Selecione ou crie um professor..."
+                                    createLabel="Criar novo professor:"
+                                />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="teacherName"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Professor</FormLabel>
-                                <FormControl>
-                                    <Combobox
-                                        options={teacherOptions}
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        placeholder="Selecione ou crie..."
-                                        createLabel="Criar novo professor:"
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
+                    )}
+                />
+                
+                <FormField
+                    control={form.control}
+                    name="subjectNames"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Matéria(s) Lecionada(s)</FormLabel>
+                        <FormControl>
+                            <ScrollArea className="h-32 w-full rounded-md border p-2">
+                                <div className="flex flex-wrap gap-2">
+                                {subjectOptions.map((option) => (
+                                    <Button
+                                        key={option.value}
+                                        type="button"
+                                        variant={field.value.includes(option.value) ? "default" : "outline"}
+                                        onClick={() => {
+                                            const currentSubjects = field.value;
+                                            const newSubjects = currentSubjects.includes(option.value)
+                                            ? currentSubjects.filter(sub => sub !== option.value)
+                                            : [...currentSubjects, option.value];
+                                            field.onChange(newSubjects);
+                                        }}
+                                        className="h-auto py-1 px-3"
+                                    >
+                                    {option.label}
+                                    </Button>
+                                ))}
+                                </div>
+                            </ScrollArea>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
                 
                 <FormField
                     control={form.control}
                     name="reviewText"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Avaliação</FormLabel>
+                        <FormLabel>Avaliação Escrita</FormLabel>
                         <FormControl>
                             <Textarea
                             placeholder="Compartilhe sua experiência com este professor..."
@@ -179,7 +195,7 @@ export function AddTeacherOrReviewDialog({
                     name="reviewRating"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Nota</FormLabel>
+                        <FormLabel>Nota Geral</FormLabel>
                         <FormControl>
                             <div className="flex items-center gap-1">
                             {[...Array(5)].map((_, index) => {
