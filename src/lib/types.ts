@@ -13,7 +13,8 @@ export interface Teacher {
   id: number;
   name: string;
   reviews: Review[];
-  subject?: string;
+  subject?: string; // Context-specific subject
+  subjects?: Set<string>; // All subjects taught
   averageRating?: number;
 }
 

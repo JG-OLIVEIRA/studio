@@ -1,4 +1,3 @@
-
 /**
  * @file data-service.ts
  * 
@@ -177,7 +176,6 @@ export async function initializeDatabase() {
     return initializationPromise;
 }
 
-
 export async function getSubjects(): Promise<Subject[]> {
     await initializeDatabase();
     
@@ -196,8 +194,11 @@ export async function getSubjects(): Promise<Subject[]> {
                 r.downvotes as review_downvotes,
                 r.created_at as review_created_at
             FROM subjects s
-            LEFT JOIN reviews r ON s.id = r.subject_id
-            LEFT JOIN teachers t ON r.teacher_id = t.id
+            LEFT JOIN (
+                SELECT * FROM reviews 
+                LEFT JOIN teachers ON reviews.teacher_id = teachers.id
+            ) AS tr ON s.id = tr.subject_id
+            LEFT JOIN teachers t ON tr.teacher_id = t.id
             ORDER BY s.name, t.name;
         `;
 
@@ -333,7 +334,6 @@ export async function downvoteReview(reviewId: number): Promise<void> {
     }
 }
 
-
 export async function getAllTeachers(): Promise<{ id: number; name: string }[]> {
     await initializeDatabase();
     const client = await pool.connect();
@@ -342,6 +342,73 @@ export async function getAllTeachers(): Promise<{ id: number; name: string }[]> 
         return result.rows;
     } catch (error) {
         console.error("Erro ao buscar todos os professores:", error);
+        return [];
+    } finally {
+        client.release();
+    }
+}
+
+export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
+    await initializeDatabase();
+    const client = await pool.connect();
+    try {
+        const query = `
+            SELECT 
+                t.id as teacher_id,
+                t.name as teacher_name,
+                r.id as review_id,
+                r.text as review_text,
+                r.rating as review_rating,
+                r.upvotes as review_upvotes,
+                r.downvotes as review_downvotes,
+                r.created_at as review_created_at,
+                s.name as subject_name
+            FROM teachers t
+            LEFT JOIN reviews r ON t.id = r.teacher_id
+            LEFT JOIN subjects s ON r.subject_id = s.id
+            ORDER BY t.name, s.name;
+        `;
+        const result = await client.query(query);
+
+        const teachersMap: Map<number, Teacher> = new Map();
+
+        for (const row of result.rows) {
+            let teacher = teachersMap.get(row.teacher_id);
+            if (!teacher) {
+                teacher = {
+                    id: row.teacher_id,
+                    name: row.teacher_name,
+                    reviews: [],
+                    averageRating: 0,
+                    subjects: new Set<string>(),
+                };
+                teachersMap.set(row.teacher_id, teacher);
+            }
+            
+            if (row.review_id && !teacher.reviews.some(r => r.id === row.review_id)) {
+                teacher.reviews.push({
+                    id: row.review_id,
+                    text: row.review_text,
+                    rating: row.review_rating,
+                    upvotes: row.review_upvotes,
+                    downvotes: row.review_downvotes,
+                    createdAt: (row.review_created_at || new Date()).toISOString(),
+                });
+            }
+            if(row.subject_name) {
+                (teacher.subjects as Set<string>).add(row.subject_name);
+            }
+        }
+
+        const teacherList = Array.from(teachersMap.values());
+        for (const teacher of teacherList) {
+            teacher.averageRating = calculateAverageRating(teacher.reviews);
+        }
+
+        return teacherList;
+
+    } catch (error) {
+        console.error("Erro ao buscar professores com estatísticas globais:", error);
         return [];
     } finally {
         client.release();

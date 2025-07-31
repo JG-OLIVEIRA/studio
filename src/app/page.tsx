@@ -1,7 +1,10 @@
 
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Users } from 'lucide-react';
 import { getSubjectsData } from '@/app/actions';
 import TeacherRateClient from '@/components/teacher-rate-client';
+import Link from 'next/link';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export default async function Home() {
   // Fetch data on the server before rendering the page.
@@ -17,9 +20,15 @@ export default async function Home() {
               CcompTeacherRate
             </h1>
           </div>
-          <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Descubra os melhores professores de Ciência da Computação, avaliados por alunos como você.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Descubra os melhores professores, avaliados por alunos como você.
+            </p>
+            <Link href="/teachers" className={cn(buttonVariants({ variant: "outline" }), " ")}>
+                <Users className="mr-2 h-4 w-4" />
+                Ver todos os professores
+            </Link>
+          </div>
         </header>
 
         {/* All client-side interactions are now handled in this component */}
