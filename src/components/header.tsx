@@ -20,7 +20,7 @@ export default function Header({ pageTitle, pageIconName, children }: HeaderProp
   const PageIcon = getIconComponent(pageIconName);
     
   return (
-    <header className="sticky top-0 z-40 w-full border-b shadow-sm bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="w-full border-b bg-background">
         <div className="container mx-auto px-4">
             <div className="flex flex-col items-center justify-center py-6">
                 <div className="flex items-center gap-4 mb-4">
