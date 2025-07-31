@@ -16,13 +16,14 @@ export default function FlowchartSubjectCard({ subjectName, isCompleted, onClick
       variant={isCompleted ? "default" : "outline"}
       onClick={onClick}
       className={cn(
-        "h-auto w-48 whitespace-normal justify-start py-2 transition-all text-left",
+        "h-auto min-h-[40px] whitespace-normal justify-start py-2 transition-all text-left text-xs",
         "hover:bg-primary/10 hover:border-primary",
+        "bg-background",
         isCompleted && "bg-primary/80 text-primary-foreground hover:bg-primary",
         className
       )}
     >
-      {isCompleted ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <Circle className="mr-2 h-4 w-4" />}
+      {isCompleted ? <CheckCircle2 className="mr-2 h-4 w-4 flex-shrink-0" /> : <Circle className="mr-2 h-4 w-4 flex-shrink-0" />}
       <span className="flex-1">{subjectName}</span>
     </Button>
   );

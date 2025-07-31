@@ -2,7 +2,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
-import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 import FlowchartSubjectCard from "./flowchart-subject-card";
 import { Lightbulb, MousePointerClick } from 'lucide-react';
 
@@ -78,26 +77,24 @@ export default function CourseFlowchart({ onCompletedChange }: CourseFlowchartPr
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="w-full whitespace-nowrap rounded-md border bg-background">
-          <div className="flex w-max space-x-4 p-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-6">
             {flowchartData.map(({ semester, subjects }) => (
-              <div key={semester} className="flex flex-col items-center space-y-4">
-                <h3 className="font-bold text-lg sticky top-0 bg-background z-10 px-2 py-1 rounded">{semester}º Período</h3>
-                <div className="flex flex-col space-y-2">
+              <div key={semester} className="flex flex-col items-center space-y-3">
+                <h3 className="font-bold text-lg px-2 py-1 rounded w-full text-center bg-background border-b-2 border-primary/50">{semester}º Período</h3>
+                <div className="flex flex-col space-y-2 w-full">
                   {subjects.map((subject) => (
                     <FlowchartSubjectCard 
                         key={subject} 
                         subjectName={subject}
                         isCompleted={completedSubjects.has(subject)}
                         onClick={() => handleToggleSubject(subject)} 
+                        className="w-full"
                     />
                   ))}
                 </div>
               </div>
             ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );
