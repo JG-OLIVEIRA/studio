@@ -25,15 +25,14 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Star, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Combobox } from './ui/combobox';
 import { useToast } from '@/hooks/use-toast';
+import { MultiSelect } from './ui/multi-select';
 
 const formSchema = z.object({
   teacherName: z.string().trim()
     .min(3, "O nome do professor deve ter pelo menos 3 caracteres."),
-  subjectName: z.string().trim()
-    .min(1, "É necessário selecionar uma matéria."),
+  subjectNames: z.array(z.string()).nonempty("É necessário selecionar pelo menos uma matéria."),
   reviewText: z.string().trim()
     .min(25, "A avaliação deve ter pelo menos 25 caracteres.")
     .max(1000, "A avaliação deve ter no máximo 1000 caracteres."),
@@ -61,14 +60,14 @@ export function AddTeacherOrReviewDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       teacherName: "",
-      subjectName: "",
+      subjectNames: [],
       reviewText: "",
       reviewRating: 0,
     },
   });
 
   const subjectOptions = useMemo(() => {
-    return allSubjectNames.map(name => ({ value: name, label: name }));
+    return allSubjectNames.map(name => ({ value: name, label: name })).sort((a, b) => a.label.localeCompare(b.label));
   }, [allSubjectNames]);
 
   const teacherOptions = useMemo(() => {
@@ -116,7 +115,7 @@ export function AddTeacherOrReviewDialog({
             <DialogHeader>
             <DialogTitle>Adicionar nova avaliação</DialogTitle>
             <DialogDescription>
-                Selecione a matéria e o professor. Se o professor não existir, ele será criado.
+                Selecione as matérias e o professor. A avaliação será aplicada a cada matéria selecionada.
             </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -124,22 +123,16 @@ export function AddTeacherOrReviewDialog({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
-                        name="subjectName"
+                        name="subjectNames"
                         render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Matéria</FormLabel>
-                             <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Selecione a matéria" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {subjectOptions.map(option => (
-                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                             </Select>
+                            <FormLabel>Matéria(s)</FormLabel>
+                            <MultiSelect
+                                options={subjectOptions}
+                                placeholder="Selecione as matérias"
+                                selected={field.value}
+                                onChange={field.onChange}
+                            />
                             <FormMessage />
                         </FormItem>
                         )}

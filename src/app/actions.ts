@@ -25,13 +25,15 @@ export async function getAIInsights(input: GenerateReviewInsightsInput): Promise
  */
 export async function handleAddTeacherOrReview(data: {
     teacherName: string;
-    subjectName: string;
+    subjectNames: string[]; // Alterado para aceitar múltiplos nomes de matérias
     reviewText: string;
     reviewRating: number;
 }) {
     await DataService.addTeacherOrReview(data);
-    revalidatePath('/'); // Revalidate the home page to show the new data
+    revalidatePath('/'); // Revalida a página principal e a de matérias
+    revalidatePath('/subjects');
 }
+
 
 /**
  * Server action to fetch all subjects data.
@@ -47,6 +49,7 @@ export async function getSubjectsData() {
 export async function upvoteReview(reviewId: number) {
     await DataService.upvoteReview(reviewId);
     revalidatePath('/');
+    revalidatePath('/subjects');
 }
 
 /**
@@ -55,6 +58,7 @@ export async function upvoteReview(reviewId: number) {
 export async function downvoteReview(reviewId: number) {
     await DataService.downvoteReview(reviewId);
     revalidatePath('/');
+    revalidatePath('/subjects');
 }
 
 /**

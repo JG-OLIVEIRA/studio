@@ -1,3 +1,4 @@
+
 /**
  * @file data-service.ts
  * 
@@ -204,7 +205,7 @@ export async function getSubjects(): Promise<Subject[]> {
 
 export async function addTeacherOrReview(data: {
   teacherName: string;
-  subjectName: string;
+  subjectNames: string[];
   reviewText: string;
   reviewRating: number;
 }): Promise<void> {
@@ -212,12 +213,7 @@ export async function addTeacherOrReview(data: {
     try {
         await client.query('BEGIN');
 
-        const subjectResult = await client.query('SELECT id FROM subjects WHERE name = $1', [data.subjectName]);
-        if (subjectResult.rowCount === 0) {
-            throw new Error(`Matéria "${data.subjectName}" não encontrada.`);
-        }
-        const subjectId = subjectResult.rows[0].id;
-
+        // Find or create the teacher
         let teacherResult = await client.query('SELECT id FROM teachers WHERE name = $1', [data.teacherName]);
         let teacherId;
         if (teacherResult.rowCount === 0) {
@@ -227,10 +223,22 @@ export async function addTeacherOrReview(data: {
             teacherId = teacherResult.rows[0].id;
         }
 
-        await client.query(
-            'INSERT INTO reviews (text, rating, teacher_id, subject_id, created_at) VALUES ($1, $2, $3, $4, NOW())',
-            [data.reviewText, data.reviewRating, teacherId, subjectId]
-        );
+        // For each subject, create a review
+        for (const subjectName of data.subjectNames) {
+            const subjectResult = await client.query('SELECT id FROM subjects WHERE name = $1', [subjectName]);
+            if (subjectResult.rowCount === 0) {
+                // If a subject doesn't exist, we skip it but log a warning. 
+                // Or you could throw an error to fail the whole transaction.
+                console.warn(`Matéria "${subjectName}" não encontrada. Pulando.`);
+                continue; 
+            }
+            const subjectId = subjectResult.rows[0].id;
+
+            await client.query(
+                'INSERT INTO reviews (text, rating, teacher_id, subject_id, created_at) VALUES ($1, $2, $3, $4, NOW())',
+                [data.reviewText, data.reviewRating, teacherId, subjectId]
+            );
+        }
 
         await client.query('COMMIT');
     } catch (error) {
