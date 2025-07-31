@@ -77,9 +77,9 @@ export default function CourseFlowchart({ onCompletedChange }: CourseFlowchartPr
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-6">
+        <div className="flex flex-col md:flex-row gap-x-2 gap-y-6">
             {flowchartData.map(({ semester, subjects }) => (
-              <div key={semester} className="flex flex-col items-center space-y-3">
+              <div key={semester} className="flex flex-col items-center space-y-3 flex-1 min-w-0">
                 <h3 className="font-bold text-lg px-2 py-1 rounded w-full text-center bg-background border-b-2 border-primary/50">{semester}º Período</h3>
                 <div className="flex flex-col space-y-2 w-full">
                   {subjects.map((subject) => (
