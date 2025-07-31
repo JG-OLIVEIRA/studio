@@ -39,13 +39,7 @@ export default async function TeachersPage() {
   }
 
   const headerContent = (
-    <>
-        <div className="inline-flex items-center justify-center gap-4 mb-4">
-            <GraduationCap className="h-12 w-12 text-primary" />
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-            CcompTeacherRate
-            </h1>
-        </div>
+      <div className="flex flex-col items-center justify-center text-center">
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
           O lugar central para encontrar e avaliar os professores de Ciência da Computação.
         </p>
@@ -62,11 +56,15 @@ export default async function TeachersPage() {
                 </Link>
             </Button>
         </div>
-    </>
+      </div>
   );
 
   return (
-    <MainLayout headerContent={headerContent}>
+    <MainLayout headerProps={{
+      pageTitle: 'CcompTeacherRate',
+      pageIconName: 'GraduationCap',
+      children: headerContent
+    }}>
       {teacherToPrompt && (
         <WelcomeReviewDialog 
             teacherToPrompt={teacherToPrompt}

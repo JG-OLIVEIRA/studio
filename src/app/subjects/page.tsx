@@ -1,39 +1,32 @@
 
 
-import { BookOpen } from 'lucide-react';
+import { BookOpen, ArrowLeft } from 'lucide-react';
 import { getSubjectsData } from '@/app/actions';
 import TeacherRateClient from '@/components/teacher-rate-client';
 import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ArrowLeft } from 'lucide-react';
 import MainLayout from '@/components/main-layout';
 
 export default async function SubjectsPage() {
-  // Fetch data on the server before rendering the page.
   const subjectsData = await getSubjectsData();
 
   const headerContent = (
-    <div className="flex flex-wrap items-center justify-between gap-4 w-full">
-        <div className='flex items-center gap-4'>
-            <BookOpen className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold tracking-tight">
-                Visualização por Matéria
-            </h1>
-        </div>
-        <div className="flex items-center gap-2">
-            <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para Professores
-            </Link>
-        </div>
+    <div className="flex items-center justify-end w-full">
+        <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar para Professores
+        </Link>
     </div>
   );
 
   return (
-    <MainLayout headerContent={headerContent} isSticky>
+    <MainLayout headerProps={{
+        pageTitle: 'Visualização por Matéria',
+        pageIconName: 'BookOpen',
+        children: headerContent
+    }}>
         <div className="container mx-auto px-4 py-8 sm:py-12">
-            {/* All client-side interactions are now handled in this component */}
             <TeacherRateClient initialSubjectsData={subjectsData} />
             
             <footer className="text-center mt-16 pb-8">
