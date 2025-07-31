@@ -3,6 +3,10 @@
 
 import Header from "./header";
 import type { HeaderProps } from "./header";
+import dynamic from "next/dynamic";
+
+const SpeedInsights = dynamic(() => import('@vercel/speed-insights/next').then((mod) => mod.SpeedInsights), { ssr: false });
+
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -16,6 +20,7 @@ export default function MainLayout({ children, headerProps }: MainLayoutProps) {
             <main>
                 {children}
             </main>
+            <SpeedInsights/>
         </div>
     );
 }

@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
+
 export const metadata: Metadata = {
   title: 'CcompTeacherRate',
   description: 'CcompTeacherRate: Encontre e avalie os melhores professores de Ciência da Computação.',
