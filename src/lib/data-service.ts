@@ -49,7 +49,6 @@ export async function initializeDatabase() {
             await client.query('BEGIN');
             console.log("Iniciando verificação do banco de dados...");
 
-            // 1. Criar tabelas com o esquema correto, se não existirem
             await client.query(`
                 CREATE TABLE IF NOT EXISTS subjects (
                     id SERIAL PRIMARY KEY,
@@ -75,7 +74,6 @@ export async function initializeDatabase() {
                 );
             `);
             
-            // Sincronizar matérias do currículo
             const dbSubjectsResult = await client.query('SELECT name FROM subjects');
             const dbSubjectNames = dbSubjectsResult.rows.map(s => s.name);
             const subjectsToAdd = curriculumSubjects.filter(cs => !dbSubjectNames.includes(cs));
@@ -91,7 +89,6 @@ export async function initializeDatabase() {
         } catch (error) {
             await client.query('ROLLBACK');
             console.error("Erro durante a inicialização do banco de dados:", error);
-            // Redefinir a promessa em caso de erro para permitir nova tentativa
             initializationPromise = null;
             throw new Error("Não foi possível inicializar o banco de dados.");
         } finally {
@@ -102,12 +99,12 @@ export async function initializeDatabase() {
     return initializationPromise;
 }
 
+
 export async function getSubjects(): Promise<Subject[]> {
     await initializeDatabase();
     
     const client = await pool.connect();
     try {
-        // Query to fetch all subjects, and for each subject, join teachers who have reviews for it.
         const query = `
             SELECT 
                 s.id as subject_id,
@@ -122,7 +119,16 @@ export async function getSubjects(): Promise<Subject[]> {
                 tr.created_at as review_created_at
             FROM subjects s
             LEFT JOIN (
-                reviews
+                SELECT 
+                    reviews.id, 
+                    reviews.text, 
+                    reviews.rating,
+                    reviews.upvotes, 
+                    reviews.downvotes,
+                    reviews.created_at,
+                    reviews.teacher_id, 
+                    reviews.subject_id
+                FROM reviews
                 JOIN teachers ON reviews.teacher_id = teachers.id
             ) tr ON s.id = tr.subject_id
             LEFT JOIN teachers t ON tr.teacher_id = t.id
@@ -132,7 +138,6 @@ export async function getSubjects(): Promise<Subject[]> {
         const result = await client.query(query);
 
         const subjectsMap: Map<number, Subject> = new Map();
-        // Pre-populate the map with all subjects to include those without teachers/reviews
         const allSubjectsResult = await client.query('SELECT id, name FROM subjects ORDER BY name');
         for (const subjectRow of allSubjectsResult.rows) {
             subjectsMap.set(subjectRow.id, {
@@ -151,9 +156,7 @@ export async function getSubjects(): Promise<Subject[]> {
             const subject = subjectsMap.get(row.subject_id);
             if (!subject) continue;
             
-            // This row has a teacher associated with the subject
             if (row.teacher_id) {
-                // Unique key for a teacher within a specific subject
                 const teacherKey = `${row.teacher_id}-${row.subject_id}`;
                 let teacher = teachersMap.get(teacherKey);
 
@@ -161,7 +164,7 @@ export async function getSubjects(): Promise<Subject[]> {
                     teacher = {
                         id: row.teacher_id,
                         name: row.teacher_name,
-                        subject: subject.name, // The subject context for this teacher instance
+                        subject: subject.name,
                         reviews: [],
                         averageRating: 0,
                     };
@@ -169,7 +172,6 @@ export async function getSubjects(): Promise<Subject[]> {
                     subject.teachers.push(teacher);
                 }
 
-                // If there's a review in this row, add it (avoiding duplicates)
                 if (row.review_id && !teacher.reviews.some(r => r.id === row.review_id)) {
                     teacher.reviews.push({
                         id: row.review_id,
@@ -183,7 +185,6 @@ export async function getSubjects(): Promise<Subject[]> {
             }
         }
         
-        // Calculate average ratings after all reviews are processed
         subjectsMap.forEach(subject => {
             subject.teachers.forEach(teacher => {
                 teacher.averageRating = calculateAverageRating(teacher.reviews);
@@ -194,7 +195,7 @@ export async function getSubjects(): Promise<Subject[]> {
 
     } catch (error) {
         console.error("Erro ao buscar dados do PostgreSQL:", error);
-        return [];
+        throw error; // Re-throw the error to be caught by the caller
     } finally {
         client.release();
     }
