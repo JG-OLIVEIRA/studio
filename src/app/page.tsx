@@ -19,15 +19,8 @@ export default async function TeachersPage() {
   
   const allSubjectNames = subjects.map(s => s.name).sort((a,b) => a.localeCompare(b));
 
-  // Sort teachers by average rating descending, then by number of reviews descending
-  const sortedTeachers = teachers.sort((a, b) => {
-    const ratingA = a.averageRating ?? 0;
-    const ratingB = b.averageRating ?? 0;
-    if (ratingB !== ratingA) {
-      return ratingB - ratingA;
-    }
-    return (b.reviews?.length ?? 0) - (a.reviews?.length ?? 0);
-  });
+  // Sort teachers alphabetically by name
+  const sortedTeachers = teachers.sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="min-h-screen bg-background">
