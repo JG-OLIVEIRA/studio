@@ -6,17 +6,10 @@ import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
-import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dialog';
-import { handleAddTeacherOrReview, getAllTeachers } from '../actions';
-
 
 export default async function SubjectsPage() {
   // Fetch data on the server before rendering the page.
-  const [subjectsData, allTeachers] = await Promise.all([
-    getSubjectsData(),
-    getAllTeachers()
-  ]);
-  const allSubjectNames = subjectsData.map(s => s.name);
+  const subjectsData = await getSubjectsData();
 
   return (
     <main className="min-h-screen w-full bg-background font-sans text-foreground">
@@ -29,11 +22,6 @@ export default async function SubjectsPage() {
                 </h1>
             </div>
             <div className="flex items-center gap-2">
-                <AddTeacherOrReviewDialog
-                    allSubjectNames={allSubjectNames}
-                    allTeachers={allTeachers}
-                    onSubmit={handleAddTeacherOrReview}
-                />
                 <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Voltar para Professores
