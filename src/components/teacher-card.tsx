@@ -1,15 +1,13 @@
 
 'use client';
 
-import { useState } from 'react';
-import { Sparkles, MessageSquarePlus, Eye, Trophy } from 'lucide-react';
+import { Sparkles, Eye, Trophy } from 'lucide-react';
 import type { Teacher } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import StarRating from './star-rating';
 import AIReviewInsights from './ai-review-insights';
 import { Button } from './ui/button';
-import { AddReviewForm } from './add-review-form';
 import { ViewReviewsDialog } from './view-reviews-dialog';
 
 interface TeacherCardProps {
@@ -18,11 +16,7 @@ interface TeacherCardProps {
 }
 
 export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCardProps) {
-  const [isAddReviewOpen, setIsAddReviewOpen] = useState(false);
-
-  // A média agora vem pré-calculada do data-service
   const averageRating = teacher.averageRating ?? 0;
-  
   const hasReviews = teacher.reviews.length > 0;
 
   return (
@@ -65,17 +59,6 @@ export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCa
                 Ver Avaliações
             </Button>
         </ViewReviewsDialog>
-
-        <AddReviewForm 
-          teacher={teacher}
-          open={isAddReviewOpen}
-          onOpenChange={setIsAddReviewOpen}
-        >
-          <Button onClick={() => setIsAddReviewOpen(true)} className="w-full col-span-2">
-            <MessageSquarePlus className="mr-2 h-4 w-4" />
-            Adicionar Avaliação
-          </Button>
-        </AddReviewForm>
       </CardFooter>
     </Card>
   );

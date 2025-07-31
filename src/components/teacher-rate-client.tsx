@@ -2,12 +2,9 @@
 'use client';
 
 import { useState, useMemo, Fragment } from 'react';
-import { PlusCircle, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import type { Subject } from '@/lib/types';
 import SubjectSection from '@/components/subject-section';
-import { Button } from '@/components/ui/button';
-import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dialog';
-import { handleAddTeacherOrReview } from '@/app/actions';
 import { Input } from '@/components/ui/input';
 import CourseFlowchart from './course-flowchart';
 import { Accordion } from '@/components/ui/accordion';
@@ -38,21 +35,8 @@ const getSemesterForSubject = (subjectName: string): number | null => {
 };
 
 export default function TeacherRateClient({ initialSubjectsData }: TeacherRateClientProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
-
-  const allSubjectNames = useMemo(() => initialSubjectsData.map(s => s.name).sort((a,b) => a.localeCompare(b)), [initialSubjectsData]);
-
-  const onAddTeacherOrReview = async (data: {
-    teacherName: string;
-    subjectName: string;
-    reviewText: string;
-    reviewRating: number;
-  }) => {
-    await handleAddTeacherOrReview(data);
-    setIsDialogOpen(false);
-  };
 
   const handleSubjectClick = (subjectName: string) => {
     const subject = initialSubjectsData.find(s => s.name.toLowerCase() === subjectName.toLowerCase());
@@ -126,30 +110,18 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
   return (
     <>
       <CourseFlowchart onSubjectClick={handleSubjectClick} />
-      <div className="my-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2">
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder="Pesquisar por disciplina ou professor..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-full"
-                />
-            </div>
+      
+      <div className="my-8">
+        <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+                type="search"
+                placeholder="Pesquisar por disciplina ou professor..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-full"
+            />
         </div>
-        <AddTeacherOrReviewDialog
-            allSubjectNames={allSubjectNames}
-            onSubmit={onAddTeacherOrReview}
-            open={isDialogOpen}
-            onOpenChange={setIsDialogOpen}
-        >
-            <Button size="lg" onClick={() => setIsDialogOpen(true)} className="w-full">
-                <PlusCircle className="mr-2 h-5 w-5" />
-                Adicionar Avaliação
-            </Button>
-        </AddTeacherOrReviewDialog>
       </div>
 
       <div className="space-y-6">

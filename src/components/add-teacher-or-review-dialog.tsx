@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, type ReactNode, useEffect } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,13 +20,14 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription,
+    DialogTrigger
   } from './ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Star } from 'lucide-react';
+import { Star, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Combobox } from './ui/combobox';
-import { getAllTeachers } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   teacherName: z.string().trim()
@@ -42,29 +43,19 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface AddTeacherOrReviewDialogProps {
-    children: ReactNode;
     allSubjectNames: string[];
-    onSubmit: (data: Omit<FormValues, 'reviewAuthor'>) => void;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
+    allTeachers: { id: number, name: string }[];
+    onSubmit: (data: Omit<FormValues, 'reviewAuthor'>) => Promise<void>;
 }
 
 export function AddTeacherOrReviewDialog({ 
-    children, 
     allSubjectNames,
+    allTeachers,
     onSubmit,
-    open,
-    onOpenChange 
 }: AddTeacherOrReviewDialogProps) {
+  const [open, setOpen] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
-  const [allTeachers, setAllTeachers] = useState<{ id: number, name: string }[]>([]);
-
-  useEffect(() => {
-    if (open) {
-      getAllTeachers().then(setAllTeachers);
-    }
-  }, [open]);
-
+  const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -87,21 +78,40 @@ export function AddTeacherOrReviewDialog({
   }, [allTeachers]);
 
 
-  const handleSubmit = (values: FormValues) => {
-    onSubmit(values);
-    form.reset();
+  const handleSubmit = async (values: FormValues) => {
+    try {
+        await onSubmit(values);
+        toast({
+            title: "Avaliação enviada!",
+            description: "Obrigado por contribuir com a comunidade.",
+        });
+        setOpen(false);
+        form.reset();
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
+        toast({
+            variant: "destructive",
+            title: "Erro ao enviar avaliação",
+            description: errorMessage,
+        });
+    }
   }
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
         form.reset();
     }
-    onOpenChange(isOpen);
+    setOpen(isOpen);
   }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-        {children}
+        <DialogTrigger asChild>
+             <Button size="lg" className="w-full sm:w-auto">
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Adicionar Avaliação
+            </Button>
+        </DialogTrigger>
         <DialogContent>
             <DialogHeader>
             <DialogTitle>Adicionar nova avaliação</DialogTitle>
@@ -111,7 +121,7 @@ export function AddTeacherOrReviewDialog({
             </DialogHeader>
             <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
                         name="subjectName"
@@ -208,8 +218,10 @@ export function AddTeacherOrReviewDialog({
                     )}
                 />
                 <div className="flex justify-end gap-2 pt-4">
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button type="submit">Enviar</Button>
+                    <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                        {form.formState.isSubmitting ? "Enviando..." : "Enviar Avaliação"}
+                    </Button>
                 </div>
             </form>
             </Form>
