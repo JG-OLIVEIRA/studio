@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, type ReactNode } from 'react';
+import { useState, useMemo, type ReactNode, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { Combobox } from './ui/combobox';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
+import type { Teacher } from '@/lib/types';
 
 const formSchema = z.object({
   teacherName: z.string().trim()
@@ -43,7 +44,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface AddTeacherOrReviewDialogProps {
     allSubjectNames: string[];
-    allTeachers: { id: number, name: string }[];
+    allTeachers: Teacher[];
     onSubmit: (data: Omit<FormValues, 'reviewAuthor'>) => Promise<void>;
 }
 
@@ -75,6 +76,26 @@ export function AddTeacherOrReviewDialog({
         .map(teacher => ({ value: teacher.name, label: teacher.name }))
         .sort((a,b) => a.label.localeCompare(b.label));
   }, [allTeachers]);
+
+  const selectedTeacherName = form.watch('teacherName');
+  const selectedTeacher = useMemo(() => {
+    return allTeachers.find(t => t.name === selectedTeacherName);
+  }, [selectedTeacherName, allTeachers]);
+
+  const existingSubjectsForTeacher = useMemo(() => {
+    return selectedTeacher?.subjects ? Array.from(selectedTeacher.subjects) : [];
+  }, [selectedTeacher]);
+
+  // Effect to pre-select and update subjects when a teacher is chosen
+  useEffect(() => {
+    if (selectedTeacher) {
+      // Automatically set the subjects the teacher already has reviews for.
+      form.setValue('subjectNames', existingSubjectsForTeacher, { shouldValidate: true });
+    } else {
+        // If teacher is cleared, clear subjects
+        form.setValue('subjectNames', [], { shouldValidate: true });
+    }
+  }, [selectedTeacher, form, existingSubjectsForTeacher]);
 
 
   const handleSubmit = async (values: FormValues) => {
@@ -149,23 +170,32 @@ export function AddTeacherOrReviewDialog({
                         <FormControl>
                             <ScrollArea className="h-32 w-full rounded-md border p-2">
                                 <div className="flex flex-wrap gap-2">
-                                {subjectOptions.map((option) => (
-                                    <Button
-                                        key={option.value}
-                                        type="button"
-                                        variant={field.value.includes(option.value) ? "default" : "outline"}
-                                        onClick={() => {
-                                            const currentSubjects = field.value;
-                                            const newSubjects = currentSubjects.includes(option.value)
-                                            ? currentSubjects.filter(sub => sub !== option.value)
-                                            : [...currentSubjects, option.value];
-                                            field.onChange(newSubjects);
-                                        }}
-                                        className="h-auto py-1 px-3"
-                                    >
-                                    {option.label}
-                                    </Button>
-                                ))}
+                                {subjectOptions.map((option) => {
+                                    const isExistingSubject = existingSubjectsForTeacher.includes(option.value);
+                                    return (
+                                        <Button
+                                            key={option.value}
+                                            type="button"
+                                            variant={field.value.includes(option.value) ? "default" : "outline"}
+                                            onClick={() => {
+                                                if (isExistingSubject) return; // Disallow unselecting
+                                                const currentSubjects = field.value;
+                                                const newSubjects = currentSubjects.includes(option.value)
+                                                ? currentSubjects.filter(sub => sub !== option.value)
+                                                : [...currentSubjects, option.value];
+                                                field.onChange(newSubjects);
+                                            }}
+                                            className={cn("h-auto py-1 px-3", {
+                                                "opacity-75 cursor-not-allowed": isExistingSubject,
+                                                "bg-secondary text-secondary-foreground hover:bg-secondary": isExistingSubject && field.value.includes(option.value)
+                                            })}
+                                            disabled={isExistingSubject}
+                                            title={isExistingSubject ? "Este professor já foi avaliado nesta matéria." : ""}
+                                        >
+                                        {option.label}
+                                        </Button>
+                                    )
+                                })}
                                 </div>
                             </ScrollArea>
                         </FormControl>

@@ -5,17 +5,15 @@ import { getTeachersWithGlobalStats } from '@/lib/data-service';
 import { Button } from '@/components/ui/button';
 import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dialog';
 import { handleAddTeacherOrReview } from './actions';
-import { getAllTeachers } from './actions';
 import { getSubjects } from '@/lib/data-service';
 import WelcomeReviewDialog from '@/components/welcome-review-dialog';
 import TeacherListClient from '@/components/teacher-list-client';
 
 export default async function TeachersPage() {
   // Fetch all data in parallel
-  const [teachers, subjects, allTeachersForForm] = await Promise.all([
+  const [teachers, subjects] = await Promise.all([
     getTeachersWithGlobalStats(),
     getSubjects(),
-    getAllTeachers()
   ]);
   
   const allSubjectNames = subjects.map(s => s.name).sort((a,b) => a.localeCompare(b));
@@ -62,7 +60,7 @@ export default async function TeachersPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <AddTeacherOrReviewDialog
                     allSubjectNames={allSubjectNames}
-                    allTeachers={allTeachersForForm}
+                    allTeachers={teachers} // Pass the full teacher objects
                     onSubmit={handleAddTeacherOrReview}
                 />
                 <Button asChild variant="outline">
