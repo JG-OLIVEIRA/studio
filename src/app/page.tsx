@@ -23,11 +23,20 @@ export default async function TeachersPage() {
   // Sort teachers alphabetically by name
   const sortedTeachers = teachers.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Find a teacher with few reviews to prompt the user
-  const teachersWithFewReviews = sortedTeachers.filter(t => t.reviews.length < 2);
-  const teacherToPrompt = teachersWithFewReviews.length > 0
-    ? teachersWithFewReviews[Math.floor(Math.random() * teachersWithFewReviews.length)]
-    : null;
+  // Find a teacher to prompt the user for a review.
+  // Priority 1: Teachers with zero reviews.
+  // Priority 2: Teachers with few reviews (less than 2).
+  const teachersWithNoReviews = sortedTeachers.filter(t => t.reviews.length === 0);
+  let teacherToPrompt = null;
+
+  if (teachersWithNoReviews.length > 0) {
+    teacherToPrompt = teachersWithNoReviews[Math.floor(Math.random() * teachersWithNoReviews.length)];
+  } else {
+    const teachersWithFewReviews = sortedTeachers.filter(t => t.reviews.length < 2);
+     if (teachersWithFewReviews.length > 0) {
+        teacherToPrompt = teachersWithFewReviews[Math.floor(Math.random() * teachersWithFewReviews.length)];
+     }
+  }
 
   return (
     <div className="min-h-screen bg-background">

@@ -18,20 +18,17 @@ const getIconComponent = (iconName: string): React.ElementType => {
 
 
 export default function SubjectSection({ subject }: SubjectSectionProps) {
-  // Sort teachers alphabetically by name
-  const sortedTeachers = [...subject.teachers].sort((a, b) => a.name.localeCompare(b.name));
-
-  const topTeacherByRating = [...subject.teachers]
-    .sort((a, b) => {
-      const ratingA = a.averageRating ?? 0;
-      const ratingB = b.averageRating ?? 0;
-      if (ratingB !== ratingA) {
-        return ratingB - ratingA;
-      }
-      return b.reviews.length - a.reviews.length;
-    })[0];
+  // Sort teachers by average rating (desc), then by number of reviews (desc)
+  const sortedTeachers = [...subject.teachers].sort((a, b) => {
+    const ratingA = a.averageRating ?? 0;
+    const ratingB = b.averageRating ?? 0;
+    if (ratingB !== ratingA) {
+      return ratingB - ratingA;
+    }
+    return b.reviews.length - a.reviews.length;
+  });
   
-  const topTeacher = topTeacherByRating && (topTeacherByRating.averageRating ?? 0) >= 4 ? topTeacherByRating : null;
+  const topTeacher = sortedTeachers.length > 0 && (sortedTeachers[0].averageRating ?? 0) >= 4 ? sortedTeachers[0] : null;
 
   const Icon = getIconComponent(subject.iconName);
 

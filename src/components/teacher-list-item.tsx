@@ -5,7 +5,7 @@ import type { Teacher } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import StarRating from './star-rating';
 import { Badge } from './ui/badge';
-import { MessageSquare, Sparkles, Trophy } from 'lucide-react';
+import { MessageSquare, Sparkles } from 'lucide-react';
 import AIReviewInsights from './ai-review-insights';
 import { Button } from './ui/button';
 
@@ -26,7 +26,6 @@ export default function TeacherListItem({ teacher, rank }: TeacherListItemProps)
             <CardTitle className="text-xl font-semibold">{name}</CardTitle>
         </div>
         <div className='flex items-center gap-2'>
-            {rank === 1 && <Trophy className="h-6 w-6 text-amber-400" />}
              <AIReviewInsights teacher={teacher} disabled={!hasReviews}>
                 <Button variant="ghost" size="icon" disabled={!hasReviews} aria-label="Ver análise de IA">
                     <Sparkles className="h-5 w-5" />
