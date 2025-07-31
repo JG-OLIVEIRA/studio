@@ -17,6 +17,7 @@ export default async function TeachersPage() {
   ]);
   
   const allSubjectNames = subjects.map(s => s.name).sort((a,b) => a.localeCompare(b));
+  const sortedTeachers = [...teachers].sort((a, b) => a.name.localeCompare(b.name));
 
   const headerContent = (
       <div className="flex flex-col items-center justify-center text-center">
@@ -50,7 +51,7 @@ export default async function TeachersPage() {
         onSubmit={handleAddTeacherOrReview}
       />
       <div className="container mx-auto px-4 py-8">
-        <TeacherListClient initialTeachers={teachers.sort((a, b) => a.name.localeCompare(b.name))} />
+        <TeacherListClient initialTeachers={sortedTeachers} />
 
         <footer className="text-center mt-16 pb-8">
             <p className="text-sm text-muted-foreground">
