@@ -8,6 +8,7 @@ import SubjectSection from '@/components/subject-section';
 import { Input } from '@/components/ui/input';
 import CourseFlowchart from './course-flowchart';
 import { Accordion } from '@/components/ui/accordion';
+import RecommendationSection from './recommendation-section';
 
 interface TeacherRateClientProps {
   initialSubjectsData: Subject[];
@@ -37,25 +38,7 @@ const getSemesterForSubject = (subjectName: string): number | null => {
 export default function TeacherRateClient({ initialSubjectsData }: TeacherRateClientProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
-
-  const handleSubjectClick = (subjectName: string) => {
-    const subject = initialSubjectsData.find(s => s.name.toLowerCase() === subjectName.toLowerCase());
-    if (subject) {
-      const subjectId = `subject-${subject.id}`;
-      setOpenAccordionItems(prev => {
-          if (prev.includes(subjectId)) {
-              return prev; 
-          }
-          return [...prev, subjectId];
-      });
-      setTimeout(() => {
-        const element = document.getElementById(`subject-title-${subject.id}`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 300);
-    }
-  };
+  const [completedSubjects, setCompletedSubjects] = useState<string[]>([]);
 
   const filteredAndGroupedSubjects = useMemo(() => {
     const lowercasedQuery = searchQuery.toLowerCase();
@@ -92,16 +75,16 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
       // Expand all items when searching
       return filteredAndGroupedSubjects.flatMap(([, subjects]) => subjects.map(sub => `subject-${sub.id}`));
     }
-    return [];
-  }, [searchQuery, filteredAndGroupedSubjects]);
+    return openAccordionItems;
+  }, [searchQuery, filteredAndGroupedSubjects, openAccordionItems]);
 
-  const accordionValue = searchQuery ? defaultAccordionValues : openAccordionItems;
 
   const noResults = filteredAndGroupedSubjects.length === 0;
 
   return (
     <>
-      <CourseFlowchart onSubjectClick={handleSubjectClick} />
+      <CourseFlowchart onCompletedChange={setCompletedSubjects} />
+      <RecommendationSection allSubjects={initialSubjectsData} completedSubjects={completedSubjects} />
       
       <div className="my-8">
         <div className="relative">
@@ -139,7 +122,7 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
                     </h2>
                     <Accordion 
                         type="multiple" 
-                        value={accordionValue}
+                        value={defaultAccordionValues}
                         onValueChange={setOpenAccordionItems}
                         className="space-y-2"
                     >

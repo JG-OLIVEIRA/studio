@@ -20,10 +20,10 @@ const flowchartData = [
 const LOCAL_STORAGE_KEY = 'completedSubjects';
 
 interface CourseFlowchartProps {
-  onSubjectClick: (subjectName: string) => void;
+  onCompletedChange: (completedSubjects: string[]) => void;
 }
 
-export default function CourseFlowchart({ onSubjectClick }: CourseFlowchartProps) {
+export default function CourseFlowchart({ onCompletedChange }: CourseFlowchartProps) {
   const [completedSubjects, setCompletedSubjects] = useState<Set<string>>(new Set());
   const [isClient, setIsClient] = useState(false);
 
@@ -32,12 +32,15 @@ export default function CourseFlowchart({ onSubjectClick }: CourseFlowchartProps
     try {
       const storedCompleted = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (storedCompleted) {
-        setCompletedSubjects(new Set(JSON.parse(storedCompleted)));
+        const parsedSubjects = JSON.parse(storedCompleted);
+        const newCompleted = new Set<string>(parsedSubjects);
+        setCompletedSubjects(newCompleted);
+        onCompletedChange(Array.from(newCompleted));
       }
     } catch (error) {
       console.error("Failed to parse completed subjects from localStorage", error);
     }
-  }, []);
+  }, [onCompletedChange]);
 
   const handleToggleSubject = (subjectName: string) => {
     const newCompletedSubjects = new Set(completedSubjects);
@@ -47,14 +50,14 @@ export default function CourseFlowchart({ onSubjectClick }: CourseFlowchartProps
       newCompletedSubjects.add(subjectName);
     }
     setCompletedSubjects(newCompletedSubjects);
+    const completedArray = Array.from(newCompletedSubjects);
+    onCompletedChange(completedArray);
 
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(Array.from(newCompletedSubjects)));
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(completedArray));
     } catch (error) {
        console.error("Failed to save completed subjects to localStorage", error);
     }
-
-    onSubjectClick(subjectName);
   };
 
   if (!isClient) {
@@ -63,7 +66,7 @@ export default function CourseFlowchart({ onSubjectClick }: CourseFlowchartProps
   }
 
   return (
-    <Card className="w-full mb-12 bg-secondary/50 border-primary/20">
+    <Card className="w-full mb-6 bg-secondary/50 border-primary/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
             <Lightbulb className="h-6 w-6 text-primary" />
@@ -71,7 +74,7 @@ export default function CourseFlowchart({ onSubjectClick }: CourseFlowchartProps
         </CardTitle>
         <CardDescription className="flex items-center gap-2">
             <MousePointerClick className='h-4 w-4'/>
-            Clique nas matérias que você já cursou para marcá-las. A página rolará até a matéria clicada.
+            Clique nas matérias que você já cursou para ver recomendações de professores para as próximas.
         </CardDescription>
       </CardHeader>
       <CardContent>
