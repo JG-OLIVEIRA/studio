@@ -1,12 +1,9 @@
 
 
-import { ArrowLeft } from 'lucide-react';
 import { getSubjectsData } from '@/app/actions';
 import TeacherRateClient from '@/components/teacher-rate-client';
-import Link from 'next/link';
-import { buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import MainLayout from '@/components/main-layout';
+import SubjectsHeaderActions from '@/components/subjects-header-actions';
 
 export default async function SubjectsPage() {
   const subjectsData = await getSubjectsData();
@@ -16,10 +13,7 @@ export default async function SubjectsPage() {
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             O lugar central para encontrar e avaliar os professores de Ciência da Computação.
         </p>
-        <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para Professores
-        </Link>
+        <SubjectsHeaderActions />
     </div>
   );
 
