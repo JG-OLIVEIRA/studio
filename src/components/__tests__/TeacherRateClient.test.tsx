@@ -16,12 +16,11 @@ jest.mock('../course-flowchart', () => ({
   default: () => <div data-testid="flowchart">Fluxograma</div>,
 }));
 
-jest.mock('../add-teacher-or-review-dialog', () => ({
-  __esModule: true,
-  AddTeacherOrReviewDialog: ({ children, open }: { children: React.ReactNode, open: boolean }) => (
-    <div data-testid="add-dialog" data-open={open}>{children}</div>
-  ),
+jest.mock('../recommendation-section', () => ({
+    __esModule: true,
+    default: () => <div data-testid="recommendations">Recomendações</div>,
 }));
+
 
 const mockSubjects: Subject[] = [
   {
@@ -64,7 +63,7 @@ describe('TeacherRateClient', () => {
     const user = userEvent.setup();
     render(<TeacherRateClient initialSubjectsData={mockSubjects} />);
     
-    const searchInput = screen.getByPlaceholderText('Pesquisar por disciplina ou professor...');
+    const searchInput = screen.getByPlaceholderText('Pesquisar por disciplina...');
     await user.type(searchInput, 'Cálculo');
 
     expect(screen.getByText('Cálculo I')).toBeInTheDocument();
@@ -72,40 +71,25 @@ describe('TeacherRateClient', () => {
     expect(screen.queryByText('Física I')).not.toBeInTheDocument();
   });
 
-  it('filters teachers based on search query', async () => {
+  it('does not filter by teacher name anymore', async () => {
     const user = userEvent.setup();
     render(<TeacherRateClient initialSubjectsData={mockSubjects} />);
     
-    const searchInput = screen.getByPlaceholderText('Pesquisar por disciplina ou professor...');
+    const searchInput = screen.getByPlaceholderText('Pesquisar por disciplina...');
     await user.type(searchInput, 'Knuth');
 
-    // The subject that contains the teacher should be visible
-    expect(screen.getByText('Algoritmos e Estr. de Dados I')).toBeInTheDocument();
-    // Other subjects should not be visible
-    expect(screen.queryByText('Cálculo I')).not.toBeInTheDocument();
-    expect(screen.queryByText('Física I')).not.toBeInTheDocument();
+    // It should now show the "no results" message because it only searches subjects
+    expect(screen.getByText(/Nenhum resultado encontrado para "Knuth"/)).toBeInTheDocument();
+    expect(screen.queryByText('Algoritmos e Estr. de Dados I')).not.toBeInTheDocument();
   });
 
   it('shows "no results" message when search yields no results', async () => {
     const user = userEvent.setup();
     render(<TeacherRateClient initialSubjectsData={mockSubjects} />);
     
-    const searchInput = screen.getByPlaceholderText('Pesquisar por disciplina ou professor...');
+    const searchInput = screen.getByPlaceholderText('Pesquisar por disciplina...');
     await user.type(searchInput, 'Zebra');
 
     expect(screen.getByText(/Nenhum resultado encontrado para "Zebra"/)).toBeInTheDocument();
-  });
-
-  it('opens the AddTeacherOrReviewDialog when the button is clicked', async () => {
-    const user = userEvent.setup();
-    render(<TeacherRateClient initialSubjectsData={mockSubjects} />);
-
-    const dialog = screen.getByTestId('add-dialog');
-    expect(dialog).toHaveAttribute('data-open', 'false');
-
-    const addButton = screen.getByRole('button', { name: /Adicionar Avaliação/i });
-    await user.click(addButton);
-
-    expect(dialog).toHaveAttribute('data-open', 'true');
   });
 });
