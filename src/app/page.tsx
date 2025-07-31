@@ -8,6 +8,7 @@ import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dia
 import { handleAddTeacherOrReview } from './actions';
 import { getAllTeachers } from './actions';
 import { getSubjects } from '@/lib/data-service';
+import WelcomeReviewDialog from '@/components/welcome-review-dialog';
 
 export default async function TeachersPage() {
   // Fetch all data in parallel
@@ -22,8 +23,22 @@ export default async function TeachersPage() {
   // Sort teachers alphabetically by name
   const sortedTeachers = teachers.sort((a, b) => a.name.localeCompare(b.name));
 
+  // Find a teacher with few reviews to prompt the user
+  const teachersWithFewReviews = sortedTeachers.filter(t => t.reviews.length < 2);
+  const teacherToPrompt = teachersWithFewReviews.length > 0
+    ? teachersWithFewReviews[Math.floor(Math.random() * teachersWithFewReviews.length)]
+    : null;
+
   return (
     <div className="min-h-screen bg-background">
+      {/* The Welcome dialog will manage its own open state based on session storage */}
+      {teacherToPrompt && (
+        <WelcomeReviewDialog 
+            teacherToPrompt={teacherToPrompt}
+            allSubjectNames={allSubjectNames}
+            onSubmit={handleAddTeacherOrReview}
+        />
+      )}
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-8">
             <div className="inline-flex items-center justify-center gap-4 mb-4">
