@@ -8,6 +8,7 @@ import SubjectSection from '@/components/subject-section';
 import { Input } from '@/components/ui/input';
 import CourseFlowchart from './course-flowchart';
 import { Accordion } from '@/components/ui/accordion';
+import RecommendationSection from './recommendation-section';
 
 interface TeacherRateClientProps {
   initialSubjectsData: Subject[];
@@ -109,6 +110,8 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
 
   return (
     <>
+      <RecommendationSection allSubjects={initialSubjectsData} />
+
       <CourseFlowchart onSubjectClick={handleSubjectClick} />
       
       <div className="my-8">
