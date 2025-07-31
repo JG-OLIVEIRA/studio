@@ -1,21 +1,29 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
+import { CheckCircle2, Circle } from "lucide-react";
 
 interface FlowchartSubjectCardProps {
   subjectName: string;
+  isCompleted: boolean;
   onClick: () => void;
   className?: string;
 }
 
-export default function FlowchartSubjectCard({ subjectName, onClick, className }: FlowchartSubjectCardProps) {
+export default function FlowchartSubjectCard({ subjectName, isCompleted, onClick, className }: FlowchartSubjectCardProps) {
   return (
     <Button
-      variant="outline"
+      variant={isCompleted ? "default" : "outline"}
       onClick={onClick}
-      className={cn("h-auto w-48 whitespace-normal text-center justify-center py-2 transition-all hover:bg-primary/10 hover:border-primary", className)}
+      className={cn(
+        "h-auto w-48 whitespace-normal justify-start py-2 transition-all text-left",
+        "hover:bg-primary/10 hover:border-primary",
+        isCompleted && "bg-primary/80 text-primary-foreground hover:bg-primary",
+        className
+      )}
     >
-      {subjectName}
+      {isCompleted ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <Circle className="mr-2 h-4 w-4" />}
+      <span className="flex-1">{subjectName}</span>
     </Button>
   );
 }

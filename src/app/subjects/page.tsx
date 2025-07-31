@@ -6,25 +6,39 @@ import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
+import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dialog';
+import { handleAddTeacherOrReview, getAllTeachers } from '../actions';
+
 
 export default async function SubjectsPage() {
   // Fetch data on the server before rendering the page.
-  const subjectsData = await getSubjectsData();
+  const [subjectsData, allTeachers] = await Promise.all([
+    getSubjectsData(),
+    getAllTeachers()
+  ]);
+  const allSubjectNames = subjectsData.map(s => s.name);
 
   return (
     <main className="min-h-screen w-full bg-background font-sans text-foreground">
       <div className="container mx-auto px-4 py-8 sm:py-12">
-        <header className="flex items-center justify-between mb-8 pb-4 border-b">
+        <header className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 border-b">
             <div className='flex items-center gap-4'>
                 <BookOpen className="h-8 w-8 text-primary" />
                 <h1 className="text-3xl font-bold tracking-tight">
                     Visualização por Matéria
                 </h1>
             </div>
-            <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para Professores
-            </Link>
+            <div className="flex items-center gap-2">
+                <AddTeacherOrReviewDialog
+                    allSubjectNames={allSubjectNames}
+                    allTeachers={allTeachers}
+                    onSubmit={handleAddTeacherOrReview}
+                />
+                <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Voltar para Professores
+                </Link>
+            </div>
         </header>
 
         {/* All client-side interactions are now handled in this component */}
