@@ -1,4 +1,5 @@
 
+
 import { GraduationCap, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { getTeachersWithGlobalStats } from '@/lib/data-service';
@@ -8,6 +9,7 @@ import { handleAddTeacherOrReview } from './actions';
 import { getSubjects } from '@/lib/data-service';
 import WelcomeReviewDialog from '@/components/welcome-review-dialog';
 import TeacherListClient from '@/components/teacher-list-client';
+import MainLayout from '@/components/main-layout';
 
 export default async function TeachersPage() {
   // Fetch all data in parallel
@@ -36,10 +38,35 @@ export default async function TeachersPage() {
     }
   }
 
+  const headerContent = (
+    <>
+        <div className="inline-flex items-center justify-center gap-4 mb-4">
+            <GraduationCap className="h-12 w-12 text-primary" />
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+            CcompTeacherRate
+            </h1>
+        </div>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
+          O lugar central para encontrar e avaliar os professores de Ciência da Computação.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <AddTeacherOrReviewDialog
+                allSubjectNames={allSubjectNames}
+                allTeachers={teachers} // Pass the full teacher objects
+                onSubmit={handleAddTeacherOrReview}
+            />
+            <Button asChild variant="outline">
+                <Link href="/subjects">
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    Ver por Matéria
+                </Link>
+            </Button>
+        </div>
+    </>
+  );
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* The Welcome dialog will manage its own open state based on session storage */}
+    <MainLayout headerContent={headerContent}>
       {teacherToPrompt && (
         <WelcomeReviewDialog 
             teacherToPrompt={teacherToPrompt}
@@ -47,31 +74,6 @@ export default async function TeachersPage() {
         />
       )}
       <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-8">
-            <div className="inline-flex items-center justify-center gap-4 mb-4">
-                <GraduationCap className="h-12 w-12 text-primary" />
-                <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-                CcompTeacherRate
-                </h1>
-            </div>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-              O lugar central para encontrar e avaliar os professores de Ciência da Computação.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <AddTeacherOrReviewDialog
-                    allSubjectNames={allSubjectNames}
-                    allTeachers={teachers} // Pass the full teacher objects
-                    onSubmit={handleAddTeacherOrReview}
-                />
-                <Button asChild variant="outline">
-                    <Link href="/subjects">
-                        <BookOpen className="mr-2 h-4 w-4" />
-                        Ver por Matéria
-                    </Link>
-                </Button>
-            </div>
-        </header>
-        
         <TeacherListClient initialTeachers={teachers.sort((a, b) => a.name.localeCompare(b.name))} />
 
         <footer className="text-center mt-16 pb-8">
@@ -80,6 +82,6 @@ export default async function TeachersPage() {
             </p>
         </footer>
       </div>
-    </div>
+    </MainLayout>
   );
 }
