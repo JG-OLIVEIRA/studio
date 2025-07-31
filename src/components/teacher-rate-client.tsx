@@ -64,17 +64,9 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
     let subjectsToProcess = initialSubjectsData;
 
     if (searchQuery) {
-        subjectsToProcess = initialSubjectsData.map(subject => {
-            const subjectMatch = subject.name.toLowerCase().includes(lowercasedQuery);
-            const teacherMatch = subject.teachers.filter(teacher => teacher.name.toLowerCase().includes(lowercasedQuery));
-            if (subjectMatch) {
-                return subject;
-            }
-            if (teacherMatch.length > 0) {
-                return { ...subject, teachers: teacherMatch };
-            }
-            return null;
-        }).filter((s): s is Subject => s !== null);
+        subjectsToProcess = initialSubjectsData.filter(subject => 
+            subject.name.toLowerCase().includes(lowercasedQuery)
+        );
     }
 
     const grouped: Record<number, Subject[]> = {};
@@ -119,7 +111,7 @@ export default function TeacherRateClient({ initialSubjectsData }: TeacherRateCl
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
                 type="search"
-                placeholder="Pesquisar por disciplina ou professor..."
+                placeholder="Pesquisar por disciplina..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 w-full"
