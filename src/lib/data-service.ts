@@ -308,20 +308,6 @@ export async function addTeacherOrReview(data: {
     }
 }
 
-
-export async function deleteReview(reviewId: number): Promise<void> {
-    const client = await pool.connect();
-    try {
-        await client.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
-    } catch (error) {
-        console.error("Erro ao deletar avaliação:", error);
-        throw new Error("Falha ao deletar a avaliação do banco de dados.");
-    } finally {
-        client.release();
-    }
-}
-
-
 export async function upvoteReview(reviewId: number): Promise<void> {
     const client = await pool.connect();
     try {

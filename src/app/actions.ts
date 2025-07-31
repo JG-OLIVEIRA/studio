@@ -42,14 +42,6 @@ export async function getSubjectsData() {
 }
 
 /**
- * Server action to delete a review.
- */
-export async function deleteReview(reviewId: number) {
-    await DataService.deleteReview(reviewId);
-    revalidatePath('/');
-}
-
-/**
  * Server action to upvote a review.
  */
 export async function upvoteReview(reviewId: number) {

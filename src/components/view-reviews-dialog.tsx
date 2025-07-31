@@ -13,21 +13,10 @@ import type { Teacher, Review } from '@/lib/types';
 import StarRating from './star-rating';
 import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
-import { Trash2, ThumbsUp, ThumbsDown } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { deleteReview, upvoteReview, downvoteReview } from '@/app/actions';
+import { ThumbsUp, ThumbsDown } from 'lucide-react';
+import { upvoteReview, downvoteReview } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
   
 interface ViewReviewsDialogProps {
     teacher: Teacher;
@@ -42,23 +31,6 @@ export function ViewReviewsDialog({ teacher, children, disabled }: ViewReviewsDi
     if (disabled) {
         return <div className="w-full">{children}</div>;
     }
-
-    const handleDelete = async (reviewId: number) => {
-        try {
-            await deleteReview(reviewId);
-            toast({
-                title: "Sucesso!",
-                description: "A avaliação foi removida.",
-            });
-        } catch(error) {
-            const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
-            toast({
-                variant: "destructive",
-                title: "Erro ao remover",
-                description: errorMessage,
-            });
-        }
-    };
     
     const handleVote = (reviewId: number, voteType: 'up' | 'down') => {
         startTransition(async () => {
@@ -120,27 +92,6 @@ export function ViewReviewsDialog({ teacher, children, disabled }: ViewReviewsDi
                                             {formatDate(review.createdAt)}
                                         </span>
                                     </div>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    Esta ação não pode ser desfeita. Isso excluirá permanentemente a avaliação.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDelete(review.id)} className="bg-destructive hover:bg-destructive/90">
-                                                    Excluir
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
                                 </div>
                                 <p className="text-sm text-foreground mb-3">{review.text}</p>
                                 <div className="flex items-center gap-4">
