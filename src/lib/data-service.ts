@@ -84,18 +84,18 @@ export async function initializeDatabase() {
                 console.log("Detectado esquema antigo. Iniciando migração de dados...");
                 
                 // Renomear tabelas antigas
-                await client.query('ALTER TABLE reviews RENAME TO reviews_old;');
-                await client.query('ALTER TABLE teachers RENAME TO teachers_old;');
+                await client.query('ALTER TABLE IF EXISTS reviews RENAME TO reviews_old;');
+                await client.query('ALTER TABLE IF EXISTS teachers RENAME TO teachers_old;');
 
                 // Criar novas tabelas com o esquema correto
                 await client.query(`
-                    CREATE TABLE teachers (
+                    CREATE TABLE IF NOT EXISTS teachers (
                         id SERIAL PRIMARY KEY,
                         name VARCHAR(255) UNIQUE NOT NULL
                     );
                 `);
                  await client.query(`
-                    CREATE TABLE reviews (
+                    CREATE TABLE IF NOT EXISTS reviews (
                         id SERIAL PRIMARY KEY,
                         text TEXT NOT NULL,
                         rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
@@ -121,7 +121,7 @@ export async function initializeDatabase() {
                         r_old.id, 
                         r_old.text, 
                         r_old.rating, 
-                        t_new.id,
+                        t_new.id AS teacher_id,
                         t_old.subject_id,
                         r_old.upvotes,
                         r_old.downvotes,
@@ -132,8 +132,8 @@ export async function initializeDatabase() {
                 `);
 
                 // Remover tabelas antigas
-                await client.query('DROP TABLE reviews_old;');
-                await client.query('DROP TABLE teachers_old;');
+                await client.query('DROP TABLE IF EXISTS reviews_old;');
+                await client.query('DROP TABLE IF EXISTS teachers_old;');
 
                 console.log("Migração de esquema concluída com sucesso.");
             }
@@ -194,9 +194,7 @@ export async function getSubjects(): Promise<Subject[]> {
                 tr.downvotes as review_downvotes,
                 tr.created_at as review_created_at
             FROM subjects s
-            LEFT JOIN (
-                SELECT * FROM reviews 
-            ) AS tr ON s.id = tr.subject_id
+            LEFT JOIN reviews tr ON s.id = tr.subject_id
             LEFT JOIN teachers t ON tr.teacher_id = t.id
             ORDER BY s.name, t.name;
         `;
