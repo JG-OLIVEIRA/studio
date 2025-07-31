@@ -14,7 +14,6 @@ import { getAIInsights } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Teacher } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
-import { Button } from './ui/button';
 import StarRating from './star-rating';
 import { Separator } from './ui/separator';
 
