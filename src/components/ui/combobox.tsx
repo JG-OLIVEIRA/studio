@@ -20,6 +20,31 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
+// Function to calculate Levenshtein distance
+const levenshteinDistance = (a: string, b: string): number => {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) {
+      matrix[i] = [i];
+    }
+    for (let j = 0; j <= a.length; j++) {
+      matrix[0][j] = j;
+    }
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        const cost = a[j - 1] === b[i - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j - 1] + cost
+        );
+      }
+    }
+    return matrix[b.length][a.length];
+};
+
+
 interface ComboboxProps {
     options: { value: string; label: string }[];
     value: string;
@@ -48,6 +73,25 @@ export function Combobox({ options, value, onChange, placeholder, createLabel, d
   // Find the label matching the current value, case-insensitively.
   const currentLabel = options.find((option) => option.value.toLowerCase() === value.toLowerCase())?.label || value;
 
+  // Find suggestion for "Did you mean?"
+  const suggestion = React.useMemo(() => {
+    if (!inputValue || options.some(opt => opt.label.toLowerCase() === inputValue.toLowerCase())) {
+        return null;
+    }
+    let bestMatch: string | null = null;
+    let minDistance = 3; // Threshold for suggestion
+
+    for (const option of options) {
+        const distance = levenshteinDistance(inputValue.toLowerCase(), option.label.toLowerCase());
+        if (distance < minDistance) {
+            minDistance = distance;
+            bestMatch = option.label;
+        }
+    }
+    return bestMatch;
+  }, [inputValue, options]);
+
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -73,20 +117,37 @@ export function Combobox({ options, value, onChange, placeholder, createLabel, d
           />
           <CommandList>
             <CommandEmpty>
-                {createLabel && inputValue && (
-                    <div className="p-1">
-                        <Button
-                            variant="ghost"
-                            className="w-full justify-start text-left"
+                <div className='p-1 text-sm text-center'>
+                    {suggestion ? (
+                         <button
+                            type="button"
+                            className="text-left w-full p-2 hover:bg-accent rounded-md"
                             onMouseDown={(e) => {
                                 e.preventDefault();
-                                handleCreate();
+                                onChange(suggestion);
+                                setOpen(false);
                             }}
                         >
-                            {createLabel} "{inputValue}"
-                        </Button>
-                    </div>
-                )}
+                           Você quis dizer: <span className="font-semibold">{suggestion}</span>?
+                        </button>
+                    ) : (
+                         <p className="text-muted-foreground p-2">Nenhum resultado.</p>
+                    )}
+                     {createLabel && inputValue && (
+                        <div className="p-1 mt-2 border-t">
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start text-left"
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    handleCreate();
+                                }}
+                            >
+                                {createLabel} "{inputValue}"
+                            </Button>
+                        </div>
+                    )}
+                </div>
             </CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
