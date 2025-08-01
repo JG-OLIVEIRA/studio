@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -66,15 +67,21 @@ const generateReviewInsightsFlow = ai.defineFlow(
     outputSchema: GenerateReviewInsightsOutputSchema,
   },
   async (input) => {
-    // Handle the case where there are no reviews to avoid calling the AI with an empty prompt.
-    if (!input.reviews || input.reviews.length === 0) {
+    // Filter out reviews that are empty or just whitespace.
+    const nonEmptyReviews = input.reviews.filter(review => review && review.trim() !== '');
+
+    // Handle the case where there are no reviews with text to avoid calling the AI with an empty prompt.
+    if (nonEmptyReviews.length === 0) {
       return {
-        insights: 'Ainda não há avaliações suficientes para que a IA possa gerar uma análise divertida. Adicione uma avaliação para começar!',
+        insights: 'Ainda não há avaliações escritas suficientes para que a IA possa gerar uma análise divertida. Adicione uma avaliação para começar!',
         passWithoutStudyingChance: 1,
       };
     }
     
-    const {output} = await prompt(input);
+    const {output} = await prompt({
+      ...input,
+      reviews: nonEmptyReviews,
+    });
     return output!;
   }
 );
