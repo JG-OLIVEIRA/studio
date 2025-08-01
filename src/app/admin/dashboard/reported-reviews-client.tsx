@@ -57,6 +57,14 @@ export default function ReportedReviewsClient({ initialReviews }: ReportedReview
     });
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   return (
     <Card>
         <CardHeader>
@@ -84,7 +92,7 @@ export default function ReportedReviewsClient({ initialReviews }: ReportedReview
                             <TableCell className="font-medium">{review.teacherName}</TableCell>
                             <TableCell>{review.subjectName}</TableCell>
                             <TableCell className="text-muted-foreground">{review.text}</TableCell>
-                            <TableCell>{new Date(review.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell>{formatDate(review.createdAt)}</TableCell>
                             <TableCell className="text-right space-x-2">
                                 <Button 
                                     size="sm" 
