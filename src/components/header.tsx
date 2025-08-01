@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -13,8 +12,9 @@ export interface HeaderProps {
     children?: React.ReactNode;
 }
 
-const getIconComponent = (iconName: IconName): React.ElementType => {
-    return LucideIcons[iconName] || LucideIcons.GraduationCap;
+const getIconComponent = (iconName: IconName) => {
+    const Icon = LucideIcons[iconName];
+    return Icon || LucideIcons.GraduationCap;
 };
 
 export default function Header({ pageTitle, pageIconName, children }: HeaderProps) {
