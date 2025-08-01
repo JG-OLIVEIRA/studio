@@ -1,6 +1,7 @@
 
 "use client"
 
+import * as React from 'react';
 import {
     Dialog,
     DialogContent,
@@ -9,14 +10,28 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import type { Teacher, Review } from '@/lib/types';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
+import type { Teacher } from '@/lib/types';
 import StarRating from './star-rating';
 import { ScrollArea } from './ui/scroll-area';
-import { Button } from './ui/button';
-import { ThumbsUp, ThumbsDown } from 'lucide-react';
-import { upvoteReview, downvoteReview } from '@/app/actions';
+import { Button, buttonVariants } from './ui/button';
+import { ThumbsUp, ThumbsDown, Flag, ShieldAlert } from 'lucide-react';
+import { upvoteReview, downvoteReview, reportReview } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useTransition } from 'react';
+import { cn } from '@/lib/utils';
+
 
 interface ViewReviewsDialogProps {
     teacher: Teacher;
@@ -50,6 +65,25 @@ export function ViewReviewsDialog({ teacher, children, disabled }: ViewReviewsDi
             }
         });
     };
+
+    const handleReport = (reviewId: number) => {
+        startTransition(async () => {
+            try {
+                await reportReview(reviewId);
+                toast({
+                    title: "Avaliação denunciada",
+                    description: "Obrigado. Nossa equipe irá analisar a sua denúncia.",
+                });
+            } catch (error) {
+                 const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
+                toast({
+                    variant: "destructive",
+                    title: "Erro ao denunciar",
+                    description: errorMessage,
+                });
+            }
+        })
+    }
 
     const reviewsWithText = teacher.reviews.filter(review => review.text && review.text.trim() !== '');
     const sortedReviews = [...reviewsWithText].sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
@@ -85,8 +119,40 @@ export function ViewReviewsDialog({ teacher, children, disabled }: ViewReviewsDi
                     <div className="space-y-4">
                         {sortedReviews.length > 0 ? sortedReviews.map((review) => (
                             <div key={review.id} className="p-4 border rounded-lg bg-muted/50">
-                                <div className="mb-2">
+                                <div className="flex justify-between items-start mb-2">
                                     <StarRating rating={review.rating} />
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="h-6 w-6 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                                disabled={isPending}
+                                                aria-label="Denunciar avaliação"
+                                            >
+                                                <Flag className="h-4 w-4" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle className="flex items-center gap-2">
+                                                    <ShieldAlert className="h-6 w-6 text-destructive"/>
+                                                    Denunciar esta avaliação?
+                                                </AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Esta ação não pode ser desfeita. A avaliação será ocultada e revisada. Se receber múltiplas denúncias, será permanentemente excluída. Por favor, denuncie apenas conteúdo que viole as regras (ex: discurso de ódio, ataques pessoais, spam).
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction 
+                                                    className={cn(buttonVariants({variant: "destructive"}))}
+                                                    onClick={() => handleReport(review.id)}>
+                                                    Confirmar Denúncia
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </div>
                                 <p className="text-sm text-foreground mb-3">{review.text}</p>
                                 <div className="flex items-center justify-between">

@@ -1,3 +1,4 @@
+
 /**
  * @file data-service.ts
  * 
@@ -71,9 +72,18 @@ export async function initializeDatabase() {
                     upvotes INTEGER NOT NULL DEFAULT 0,
                     downvotes INTEGER NOT NULL DEFAULT 0,
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-                    reported BOOLEAN NOT NULL DEFAULT false
+                    reported BOOLEAN NOT NULL DEFAULT false,
+                    report_count INTEGER NOT NULL DEFAULT 0
                 );
             `);
+            
+            // Add report_count column if it doesn't exist (for backward compatibility)
+             try {
+                await client.query('ALTER TABLE reviews ADD COLUMN IF NOT EXISTS report_count INTEGER NOT NULL DEFAULT 0;');
+            } catch (e: any) {
+                // This might fail if the column type is different, but for this app's lifecycle it's safe.
+                console.warn("Could not add report_count column, it might already exist with a different type or other issue.", e.message);
+            }
             
             // Allow 'text' column to be NULL, but default to empty string.
             await client.query(`
@@ -239,16 +249,14 @@ export async function addTeacherOrReview(data: {
                 continue; 
             }
             const subjectId = subjectResult.rows[0].id;
-
-            // Anti-spam: Check for an identical review if text is provided.
-             if(data.reviewText.trim()) {
+            
+            if(data.reviewText.trim()) {
                 const duplicateCheck = await client.query(
-                    'SELECT id FROM reviews WHERE teacher_id = $1 AND subject_id = $2 AND text = $3',
+                    'SELECT id FROM reviews WHERE teacher_id = $1 AND subject_id = $2 AND text = $3 AND reported = false',
                     [teacherId, subjectId, data.reviewText]
                 );
-
+                
                 if (duplicateCheck.rowCount && duplicateCheck.rowCount > 0) {
-                    // Throw an error that will be caught and shown to the user
                     throw new Error(`Uma avaliação idêntica para o professor ${data.teacherName} na matéria ${subjectName} já foi enviada.`);
                 }
             }
@@ -263,8 +271,7 @@ export async function addTeacherOrReview(data: {
     } catch (error) {
         await client.query('ROLLBACK');
         console.error("Erro ao adicionar professor/avaliação:", error);
-        // Re-throw the original error if it's from our logic, otherwise throw a generic one.
-        if (error instanceof Error && (error.message.includes("inadequada") || error.message.includes("idêntica"))) {
+        if (error instanceof Error && error.message.includes("idêntica")) {
             throw error;
         }
         throw new Error("Falha ao salvar os dados no banco de dados.");
@@ -296,6 +303,45 @@ export async function downvoteReview(reviewId: number): Promise<void> {
         client.release();
     }
 }
+
+
+export async function reportReview(reviewId: number): Promise<void> {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Increment report count and set reported flag
+        const updateResult = await client.query(
+            `UPDATE reviews 
+             SET 
+                report_count = report_count + 1, 
+                reported = true 
+             WHERE id = $1 
+             RETURNING report_count`, 
+            [reviewId]
+        );
+        
+        if (updateResult.rows.length === 0) {
+            throw new Error("Avaliação não encontrada.");
+        }
+
+        const newReportCount = updateResult.rows[0].report_count;
+
+        // If report count reaches the threshold (e.g., 2), delete the review
+        if (newReportCount >= 2) {
+            await client.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
+        }
+        
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error("Erro ao denunciar avaliação:", error);
+        throw new Error("Falha ao registrar a denúncia.");
+    } finally {
+        client.release();
+    }
+}
+
 
 export async function getAllTeachers(): Promise<{ id: number; name: string }[]> {
     await initializeDatabase();

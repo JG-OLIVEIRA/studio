@@ -43,6 +43,16 @@ export async function downvoteReview(reviewId: number) {
 }
 
 /**
+ * Server action to report a review.
+ */
+export async function reportReview(reviewId: number) {
+    await DataService.reportReview(reviewId);
+    revalidatePath('/');
+    revalidatePath('/subjects');
+}
+
+
+/**
  * Server action to fetch all teachers.
  */
 export async function getAllTeachers() {
