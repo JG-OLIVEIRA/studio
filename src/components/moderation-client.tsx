@@ -25,7 +25,7 @@ const USER_INFO_KEY = 'moderationUserInfo';
 
 const loginSchema = z.object({
     email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
-    studentId: z.string().regex(/^\d{9}$/, { message: "A matrícula deve conter 9 dígitos." })
+    studentId: z.string().regex(/^\d{12}$/, { message: "A matrícula deve conter 12 dígitos." })
         .refine(val => {
             const currentYear = new Date().getFullYear();
             const startYear = parseInt(val.substring(0, 4), 10);
@@ -143,7 +143,7 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Matrícula</FormLabel>
-                                    <FormControl><Input placeholder="Ex: 20241012345" {...field} /></FormControl>
+                                    <FormControl><Input placeholder="Ex: 202410123456" {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
