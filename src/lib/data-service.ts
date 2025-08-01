@@ -227,33 +227,12 @@ export async function downvoteReview(reviewId: number): Promise<void> {
 export async function reportReview(reviewId: number): Promise<void> {
     const client = await pool.connect();
     try {
-        await client.query('BEGIN');
-
-        // Increment report count and set reported flag
-        const updateResult = await client.query(
-            `UPDATE reviews 
-             SET 
-                report_count = report_count + 1, 
-                reported = true 
-             WHERE id = $1 
-             RETURNING report_count`, 
+        // Just mark the review as reported. The moderation page will handle the rest.
+        await client.query(
+            'UPDATE reviews SET reported = true, report_count = report_count + 1 WHERE id = $1',
             [reviewId]
         );
-        
-        if (updateResult.rows.length === 0) {
-            throw new Error("Avaliação não encontrada.");
-        }
-
-        const newReportCount = updateResult.rows[0].report_count;
-
-        // If report count reaches the threshold (e.g., 2), delete the review
-        if (newReportCount >= 2) {
-            await client.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
-        }
-        
-        await client.query('COMMIT');
     } catch (error) {
-        await client.query('ROLLBACK');
         console.error("Erro ao denunciar avaliação:", error);
         throw new Error("Falha ao registrar a denúncia.");
     } finally {
