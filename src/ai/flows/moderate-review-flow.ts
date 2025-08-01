@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -30,6 +31,14 @@ const prompt = ai.definePrompt({
   name: 'moderateReviewPrompt',
   input: {schema: ModerateReviewInputSchema},
   output: {schema: ModerateReviewOutputSchema},
+  config: {
+    safetySettings: [
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_NONE',
+      },
+    ],
+  },
   prompt: `Você é um moderador de conteúdo de IA para um site de avaliação de professores. Sua tarefa é analisar a seguinte avaliação de um aluno e determinar se ela viola alguma das diretrizes da comunidade.
 
   Diretrizes da Comunidade:
