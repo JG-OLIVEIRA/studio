@@ -10,7 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const ModerateReviewInputSchema = z.object({
   reviewText: z.string().describe('The text content of the student review.'),
@@ -29,6 +29,7 @@ export async function moderateReview(input: ModerateReviewInput): Promise<Modera
 
 const prompt = ai.definePrompt({
   name: 'moderateReviewPrompt',
+  model: 'gemini-1.5-flash-latest',
   input: {schema: ModerateReviewInputSchema},
   output: {schema: ModerateReviewOutputSchema},
   config: {
