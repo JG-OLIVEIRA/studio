@@ -5,9 +5,10 @@ import type { Teacher } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import StarRating from './star-rating';
 import { Badge } from './ui/badge';
-import { MessageSquare, Sparkles } from 'lucide-react';
+import { MessageSquare, Sparkles, Eye } from 'lucide-react';
 import AIReviewInsights from './ai-review-insights';
 import { Button } from './ui/button';
+import { ViewReviewsDialog } from './view-reviews-dialog';
 
 interface TeacherListItemProps {
   teacher: Teacher;
@@ -31,6 +32,11 @@ export default function TeacherListItem({ teacher, rank }: TeacherListItemProps)
                     <Sparkles className="h-5 w-5" />
                 </Button>
             </AIReviewInsights>
+            <ViewReviewsDialog teacher={teacher} disabled={!hasReviews}>
+                <Button variant="ghost" size="icon" disabled={!hasReviews} aria-label="Ver avaliações">
+                    <Eye className="h-5 w-5" />
+                </Button>
+            </ViewReviewsDialog>
         </div>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center flex-grow">
