@@ -227,9 +227,8 @@ export async function downvoteReview(reviewId: number): Promise<void> {
 export async function reportReview(reviewId: number): Promise<void> {
     const client = await pool.connect();
     try {
-        // Just mark the review as reported. The moderation page will handle the rest.
         await client.query(
-            'UPDATE reviews SET reported = true, report_count = report_count + 1 WHERE id = $1',
+            'UPDATE reviews SET reported = true WHERE id = $1',
             [reviewId]
         );
     } catch (error) {
@@ -341,7 +340,6 @@ export async function getReportedReviews(): Promise<Review[]> {
                 r.upvotes,
                 r.downvotes,
                 r.report_count,
-                r.report_approvals,
                 r.created_at,
                 t.name as teacher_name,
                 s.name as subject_name
@@ -359,7 +357,7 @@ export async function getReportedReviews(): Promise<Review[]> {
             upvotes: row.upvotes,
             downvotes: row.downvotes,
             report_count: row.report_count,
-            report_approvals: row.report_approvals,
+            report_approvals: row.report_count, // Use report_count for approvals logic
             createdAt: (row.created_at || new Date()).toISOString(),
             teacherName: row.teacher_name,
             subjectName: row.subject_name,
@@ -378,7 +376,7 @@ export async function approveReport(reviewId: number): Promise<void> {
         await client.query('BEGIN');
         
         const updateResult = await client.query(
-            'UPDATE reviews SET report_approvals = report_approvals + 1 WHERE id = $1 RETURNING report_approvals',
+            'UPDATE reviews SET report_count = report_count + 1 WHERE id = $1 RETURNING report_count',
             [reviewId]
         );
         
@@ -386,7 +384,7 @@ export async function approveReport(reviewId: number): Promise<void> {
             throw new Error('Avaliação não encontrada.');
         }
 
-        const newApprovalCount = updateResult.rows[0].report_approvals;
+        const newApprovalCount = updateResult.rows[0].report_count;
         if (newApprovalCount >= 5) {
             await client.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
         }
@@ -405,7 +403,7 @@ export async function rejectReport(reviewId: number): Promise<void> {
     const client = await pool.connect();
     try {
         await client.query(
-            'UPDATE reviews SET reported = false, report_count = 0, report_approvals = 0 WHERE id = $1',
+            'UPDATE reviews SET reported = false, report_count = 0 WHERE id = $1',
             [reviewId]
         );
     } catch (error) {
