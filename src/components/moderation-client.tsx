@@ -113,7 +113,7 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
                 <div className="flex justify-between items-center mb-2">
                      <StarRating rating={review.rating} />
                      <Badge variant="destructive">
-                        {review.report_approvals} / {APPROVAL_THRESHOLD} votos para remoção
+                        {review.report_approvals || 0} / {APPROVAL_THRESHOLD} votos para remoção
                      </Badge>
                 </div>
                 <blockquote className="border-l-4 border-primary pl-4 italic my-2">
