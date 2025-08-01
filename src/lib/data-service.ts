@@ -7,6 +7,7 @@
 import 'server-only';
 import type { Subject, Teacher, Review } from './types';
 import { pool } from './db';
+import { moderateReviewFlow } from './moderate-review';
 
 const curriculumSubjects = [
     "Geometria Analítica", "Cálculo I", "Cálculo II", "Cálculo III", "Cálculo IV", "Álgebra", "Matemática Discreta", "Fundamentos da Computação",
@@ -220,6 +221,15 @@ export async function addTeacherOrReview(data: {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+
+        // Se houver texto na avaliação, moderar antes de prosseguir.
+        if (data.reviewText && data.reviewText.trim().length > 0) {
+            const moderationResult = await moderateReviewFlow(data.reviewText);
+            if (!moderationResult.permissao) {
+                // Lança um erro que será capturado no formulário e exibido ao usuário
+                throw new Error(`Avaliação inadequada: ${moderationResult.motivo}`);
+            }
+        }
 
         // Find or create the teacher
         let teacherResult = await client.query('SELECT id FROM teachers WHERE name = $1', [data.teacherName]);
