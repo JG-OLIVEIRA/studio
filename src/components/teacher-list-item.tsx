@@ -20,6 +20,11 @@ export default function TeacherListItem({ teacher, rank }: TeacherListItemProps)
   const { name, averageRating = 0, reviews, subjects } = teacher;
   const hasReviews = reviews.length > 0;
 
+  // Since we are on the main page, the "subject" for AI context can be generic
+  // or you can decide on a primary subject if that data is available.
+  // Here we'll just pass the teacher object which now contains all reviews.
+  const teacherForAI = { ...teacher, subject: 'Geral' };
+
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
@@ -28,7 +33,7 @@ export default function TeacherListItem({ teacher, rank }: TeacherListItemProps)
             <CardTitle className="text-xl font-semibold">{name}</CardTitle>
         </div>
         <div className='flex items-center gap-1'>
-             <AIReviewInsights teacher={teacher} disabled={!hasReviews}>
+             <AIReviewInsights teacher={teacherForAI} disabled={!hasReviews}>
                 <Button variant="ghost" size="icon" disabled={!hasReviews} aria-label="Ver análise de IA">
                     <Sparkles className="h-5 w-5" />
                 </Button>
@@ -58,7 +63,7 @@ export default function TeacherListItem({ teacher, rank }: TeacherListItemProps)
             <h4 className="text-sm font-semibold text-muted-foreground mb-2">Matérias Lecionadas</h4>
             {subjects && subjects.size > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                    {Array.from(subjects).map((subjectName) => (
+                    {Array.from(subjects).sort().map((subjectName) => (
                         <Badge key={subjectName} variant="secondary">{subjectName}</Badge>
                     ))}
                 </div>

@@ -352,7 +352,22 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
     await initializeDatabase();
     const client = await pool.connect();
     try {
-        const query = `
+        // First, get all teachers to ensure everyone is listed, even those with no reviews yet.
+        const allTeachersResult = await client.query('SELECT id, name FROM teachers ORDER BY name');
+        const teachersMap: Map<number, Teacher> = new Map();
+
+        allTeachersResult.rows.forEach(t => {
+            teachersMap.set(t.id, {
+                id: t.id,
+                name: t.name,
+                reviews: [],
+                averageRating: 0,
+                subjects: new Set<string>(),
+            });
+        });
+
+        // Then, fetch all non-reported reviews with their subject and teacher info.
+        const reviewsQuery = `
             SELECT 
                 t.id as teacher_id,
                 t.name as teacher_name,
@@ -364,44 +379,36 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                 r.reported as review_reported,
                 r.created_at as review_created_at,
                 s.name as subject_name
-            FROM teachers t
-            LEFT JOIN reviews r ON t.id = r.teacher_id AND r.reported = false
-            LEFT JOIN subjects s ON r.subject_id = s.id
+            FROM reviews r
+            JOIN teachers t ON r.teacher_id = t.id
+            JOIN subjects s ON r.subject_id = s.id
+            WHERE r.reported = false
             ORDER BY t.name, s.name;
         `;
-        const result = await client.query(query);
+        const reviewsResult = await client.query(reviewsQuery);
 
-        const teachersMap: Map<number, Teacher> = new Map();
-
-        for (const row of result.rows) {
+        // Populate reviews and subjects for each teacher.
+        for (const row of reviewsResult.rows) {
             let teacher = teachersMap.get(row.teacher_id);
-            if (!teacher) {
-                teacher = {
-                    id: row.teacher_id,
-                    name: row.teacher_name,
-                    reviews: [],
-                    averageRating: 0,
-                    subjects: new Set<string>(),
-                };
-                teachersMap.set(row.teacher_id, teacher);
-            }
-            
-            if (row.review_id && !teacher.reviews.some(r => r.id === row.review_id)) {
-                teacher.reviews.push({
-                    id: row.review_id,
-                    text: row.review_text,
-                    rating: row.review_rating,
-                    upvotes: row.review_upvotes,
-                    downvotes: row.review_downvotes,
-                    reported: row.review_reported,
-                    createdAt: (row.review_created_at || new Date()).toISOString(),
-                });
-            }
-            if(row.subject_name) {
-                (teacher.subjects as Set<string>).add(row.subject_name);
+            if (teacher) {
+                if (row.review_id && !teacher.reviews.some(r => r.id === row.review_id)) {
+                    teacher.reviews.push({
+                        id: row.review_id,
+                        text: row.review_text,
+                        rating: row.review_rating,
+                        upvotes: row.review_upvotes,
+                        downvotes: row.review_downvotes,
+                        reported: row.review_reported,
+                        createdAt: (row.review_created_at || new Date()).toISOString(),
+                    });
+                }
+                if (row.subject_name) {
+                    (teacher.subjects as Set<string>).add(row.subject_name);
+                }
             }
         }
 
+        // Calculate average rating for each teacher based on their collected reviews.
         const teacherList = Array.from(teachersMap.values());
         for (const teacher of teacherList) {
             teacher.averageRating = calculateAverageRating(teacher.reviews);
