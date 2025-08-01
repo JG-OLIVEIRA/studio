@@ -159,8 +159,8 @@ export function AddTeacherOrReviewDialog({
                 Selecione o professor e a(s) matéria(s) que ele leciona. A avaliação será aplicada a cada matéria selecionada.
             </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="h-full overflow-auto pr-6 -mr-6">
-                <div className="pr-1">
+            <ScrollArea className="h-full overflow-auto pr-1">
+                <div className="pr-5">
                     <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                         <FormField
