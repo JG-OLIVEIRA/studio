@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileoverview This file initializes the Genkit AI instance.
@@ -20,3 +21,5 @@ export const ai = genkit({
   // Enable OpenTelemetry for tracing and performance monitoring.
   enableTracingAndMetrics: true,
 });
+
+    
