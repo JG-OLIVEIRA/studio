@@ -3,7 +3,6 @@
 
 import { generateReviewInsights, type GenerateReviewInsightsInput, type GenerateReviewInsightsOutput } from "@/ai/flows/generate-review-insights";
 import { runFullModeration, type ProblematicReview } from "@/ai/flows/moderate-all-reviews-flow";
-import { realtimeModerateReview, type ModerateReviewOutput } from "@/ai/flows/realtime-moderate-review-flow";
 import * as DataService from '@/lib/data-service';
 import { revalidatePath } from 'next/cache';
 
@@ -102,14 +101,4 @@ export async function deleteReviewAction(reviewId: number) {
  */
 export async function runAIModeration(): Promise<ProblematicReview[]> {
     return runFullModeration();
-}
-
-/**
- * Server action to check a review in real-time.
- */
-export async function checkReviewRealtime(reviewText: string): Promise<ModerateReviewOutput> {
-    if (!reviewText.trim()) {
-        return { isProblematic: false };
-    }
-    return realtimeModerateReview({ reviewText });
 }
