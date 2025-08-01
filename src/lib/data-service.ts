@@ -439,7 +439,7 @@ export async function approveReport(reviewId: number, studentId: string): Promis
             [studentId, reviewId]
         );
 
-        if (existingVote.rowCount && existingVote.rowCount > 0) {
+        if (existingVote.rows.length > 0) {
             throw new Error('Você já votou nesta avaliação.');
         }
         
@@ -454,7 +454,7 @@ export async function approveReport(reviewId: number, studentId: string): Promis
             [reviewId]
         );
         
-        if (updateResult.rowCount === 0) {
+        if (updateResult.rows.length === 0) {
             throw new Error('Avaliação não encontrada.');
         }
 
@@ -487,7 +487,7 @@ export async function rejectReport(reviewId: number, studentId: string): Promise
             [studentId, reviewId]
         );
 
-        if (existingVote.rowCount && existingVote.rowCount > 0) {
+        if (existingVote.rows.length > 0) {
             throw new Error('Você já votou nesta avaliação.');
         }
 
