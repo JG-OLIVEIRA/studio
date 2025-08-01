@@ -11,13 +11,16 @@ interface AdminPageProps {
 
 export default async function AdminModerateAllPage({ searchParams }: AdminPageProps) {
     const secret = searchParams['secret'];
+    const isProduction = process.env.NODE_ENV === 'production';
+    const adminSecret = process.env.ADMIN_SECRET;
 
-    if (process.env.NODE_ENV === 'production' && secret !== process.env.ADMIN_SECRET) {
+    // Em produção, o segredo deve ser definido e corresponder.
+    if (isProduction && (!adminSecret || secret !== adminSecret)) {
         return (
             <MainLayout headerProps={{ pageTitle: "Acesso Negado", pageIconName: "ShieldAlert" }}>
                 <div className="container mx-auto p-8 text-center">
                     <h1 className="text-2xl font-bold text-destructive">Acesso Negado</h1>
-                    <p className="text-muted-foreground mt-2">Segredo de administração inválido.</p>
+                    <p className="text-muted-foreground mt-2">Segredo de administração inválido ou não configurado.</p>
                 </div>
             </MainLayout>
         )
