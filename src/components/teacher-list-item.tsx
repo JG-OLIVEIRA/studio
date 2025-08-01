@@ -9,6 +9,7 @@ import { MessageSquare, Sparkles, Eye } from 'lucide-react';
 import AIReviewInsights from './ai-review-insights';
 import { Button } from './ui/button';
 import { ViewReviewsDialog } from './view-reviews-dialog';
+import { Separator } from './ui/separator';
 
 interface TeacherListItemProps {
   teacher: Teacher;
@@ -21,12 +22,12 @@ export default function TeacherListItem({ teacher, rank }: TeacherListItemProps)
 
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div className="flex items-center gap-4">
             <span className="text-xl font-bold text-primary w-8 text-center">{rank}</span>
             <CardTitle className="text-xl font-semibold">{name}</CardTitle>
         </div>
-        <div className='flex items-center gap-2'>
+        <div className='flex items-center gap-1'>
              <AIReviewInsights teacher={teacher} disabled={!hasReviews}>
                 <Button variant="ghost" size="icon" disabled={!hasReviews} aria-label="Ver análise de IA">
                     <Sparkles className="h-5 w-5" />
@@ -39,9 +40,8 @@ export default function TeacherListItem({ teacher, rank }: TeacherListItemProps)
             </ViewReviewsDialog>
         </div>
       </CardHeader>
-      <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center flex-grow">
-        <div className="flex flex-col items-center md:items-start space-y-2">
-            <h4 className="text-sm font-semibold text-muted-foreground">Média Global</h4>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6 space-y-2 sm:space-y-0">
             <div className="flex items-center gap-2">
                 <StarRating rating={averageRating} />
                 <span className="font-bold text-lg">{averageRating.toFixed(1)}</span>
@@ -51,16 +51,19 @@ export default function TeacherListItem({ teacher, rank }: TeacherListItemProps)
                 <span className="text-sm">{reviews.length} {reviews.length === 1 ? 'avaliação' : 'avaliações'}</span>
             </div>
         </div>
-        <div className="col-span-2">
-            <h4 className="text-sm font-semibold text-muted-foreground mb-2 text-center md:text-left">Matérias Lecionadas</h4>
+        
+        <Separator />
+        
+        <div>
+            <h4 className="text-sm font-semibold text-muted-foreground mb-2">Matérias Lecionadas</h4>
             {subjects && subjects.size > 0 ? (
-                <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                <div className="flex flex-wrap gap-2">
                     {Array.from(subjects).map((subjectName) => (
                         <Badge key={subjectName} variant="secondary">{subjectName}</Badge>
                     ))}
                 </div>
             ) : (
-                 <p className="text-sm text-muted-foreground text-center md:text-left">Nenhuma matéria registrada.</p>
+                 <p className="text-sm text-muted-foreground">Nenhuma matéria registrada.</p>
             )}
         </div>
       </CardContent>
