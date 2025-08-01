@@ -29,7 +29,7 @@ export async function moderateReview(input: ModerateReviewInput): Promise<Modera
 
 const prompt = ai.definePrompt({
   name: 'moderateReviewPrompt',
-  model: 'gemini-1.5-flash-latest',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: ModerateReviewInputSchema},
   output: {schema: ModerateReviewOutputSchema},
   config: {
