@@ -94,10 +94,7 @@ export function ViewReviewsDialog({ teacher, children, disabled }: ViewReviewsDi
             if (isNaN(date.getTime())) {
                 return "Data inválida";
             }
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day}/${month}/${year}`;
+            return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(date);
         } catch (e) {
             return "Data inválida";
         }

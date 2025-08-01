@@ -82,7 +82,7 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
     try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return "Data inválida";
-        return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(date);
+        return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(date);
     } catch (e) {
         return "Data inválida";
     }
