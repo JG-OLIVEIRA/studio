@@ -1,4 +1,3 @@
-
 /**
  * @file data-service.ts
  * 
@@ -8,7 +7,8 @@
 import 'server-only';
 import type { Subject, Teacher, Review } from './types';
 import { pool } from './db';
-import { moderateReviewFlow } from '@/lib/flows/moderate-review-flow';
+import { moderateReviewFlow } from '@/ai/flows/moderate-review-flow';
+
 
 const curriculumSubjects = [
     "Geometria Analítica", "Cálculo I", "Cálculo II", "Cálculo III", "Cálculo IV", "Álgebra", "Matemática Discreta", "Fundamentos da Computação",
@@ -393,5 +393,3 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
         client.release();
     }
 }
-
-    

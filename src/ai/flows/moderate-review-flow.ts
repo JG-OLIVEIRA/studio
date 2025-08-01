@@ -5,8 +5,7 @@
  * This file defines a Genkit flow that uses an AI model to determine if a
  * user-submitted review is appropriate for the platform.
  */
-
-import { ai } from '@/ai/index';
+import { ai } from '@/ai';
 import { z } from 'zod';
 
 // Zod schema for the input of the moderation flow.
