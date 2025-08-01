@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file initializes the Genkit AI instance with necessary plugins.
  * It configures the AI with Google AI for generative capabilities and Firebase

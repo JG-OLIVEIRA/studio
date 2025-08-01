@@ -12,7 +12,7 @@
  * - ModerationOutputSchema - Zod schema for the flow's output (appropriateness and reason).
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '@/ai/index';
 import { z } from 'zod';
 
 // Zod schema for the input of the moderation flow.
