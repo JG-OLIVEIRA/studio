@@ -149,7 +149,7 @@ export function AddTeacherOrReviewDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-             <Button size="lg" className="w-full sm:w-auto">
+             <Button className="w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-5 w-5" />
                 Adicionar Avaliação
             </Button>
@@ -281,5 +281,3 @@ export function AddTeacherOrReviewDialog({
     </Dialog>
   );
 }
-
-    
