@@ -13,16 +13,10 @@ import type { Teacher, Review } from '@/lib/types';
 import StarRating from './star-rating';
 import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
-import { ThumbsUp, ThumbsDown, Flag } from 'lucide-react';
-import { upvoteReview, downvoteReview, reportReview } from '@/app/actions';
+import { ThumbsUp, ThumbsDown } from 'lucide-react';
+import { upvoteReview, downvoteReview } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useTransition } from 'react';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
 
 interface ViewReviewsDialogProps {
     teacher: Teacher;
@@ -57,31 +51,12 @@ export function ViewReviewsDialog({ teacher, children, disabled }: ViewReviewsDi
         });
     };
 
-    const handleReport = (reviewId: number) => {
-        startTransition(async () => {
-            try {
-                await reportReview(reviewId);
-                toast({
-                    title: "Avaliação denunciada",
-                    description: "Obrigado por ajudar a manter a comunidade segura. A avaliação será revisada pela administração."
-                });
-            } catch (error) {
-                 const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
-                 toast({
-                    variant: "destructive",
-                    title: "Erro ao denunciar",
-                    description: errorMessage,
-                });
-            }
-        });
-    };
-
-    const sortedReviews = [...teacher.reviews].sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
+    const reviewsWithText = teacher.reviews.filter(review => review.text && review.text.trim() !== '');
+    const sortedReviews = [...reviewsWithText].sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
 
     const formatDate = (dateString: string) => {
         try {
             const date = new Date(dateString);
-            // Verifica se a data é válida
             if (isNaN(date.getTime())) {
                 return "Data inválida";
             }
@@ -107,35 +82,14 @@ export function ViewReviewsDialog({ teacher, children, disabled }: ViewReviewsDi
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-[400px] pr-4">
-                    <TooltipProvider>
-                        <div className="space-y-4">
-                            {sortedReviews.length > 0 ? sortedReviews.map((review) => (
-                                <div key={review.id} className="group p-4 border rounded-lg bg-muted/50 relative">
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <StarRating rating={review.rating} />
-                                            <span className="text-xs text-muted-foreground">
-                                                {formatDate(review.createdAt)}
-                                            </span>
-                                        </div>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    onClick={() => handleReport(review.id)}
-                                                    disabled={isPending}
-                                                >
-                                                    <Flag className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Denunciar avaliação</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </div>
-                                    <p className="text-sm text-foreground mb-3">{review.text}</p>
+                    <div className="space-y-4">
+                        {sortedReviews.length > 0 ? sortedReviews.map((review) => (
+                            <div key={review.id} className="p-4 border rounded-lg bg-muted/50">
+                                <div className="mb-2">
+                                    <StarRating rating={review.rating} />
+                                </div>
+                                <p className="text-sm text-foreground mb-3">{review.text}</p>
+                                <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-4">
                                         <div className="flex items-center gap-1">
                                             <Button 
@@ -162,12 +116,18 @@ export function ViewReviewsDialog({ teacher, children, disabled }: ViewReviewsDi
                                             <span className="text-xs font-medium text-muted-foreground w-4">{review.downvotes}</span>
                                         </div>
                                     </div>
+                                    <span className="text-xs text-muted-foreground">
+                                        {formatDate(review.createdAt)}
+                                    </span>
                                 </div>
-                            )) : (
-                                <p className="text-center text-muted-foreground py-8">Nenhuma avaliação encontrada.</p>
-                            )}
-                        </div>
-                    </TooltipProvider>
+                            </div>
+                        )) : (
+                            <div className="flex flex-col items-center justify-center gap-4 text-center text-muted-foreground border-2 border-dashed rounded-lg p-12">
+                                <p className="font-semibold">Nenhuma avaliação com texto.</p>
+                                <p className="text-sm">Ainda não há comentários escritos para este professor.</p>
+                            </div>
+                        )}
+                    </div>
                 </ScrollArea>
             </DialogContent>
         </Dialog>
