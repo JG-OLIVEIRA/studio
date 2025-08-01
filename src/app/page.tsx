@@ -1,5 +1,5 @@
 
-import { BookOpen, Megaphone } from 'lucide-react';
+import { BookOpen, Megaphone, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { getTeachersWithGlobalStats } from '@/lib/data-service';
 import { Button } from '@/components/ui/button';
@@ -69,10 +69,16 @@ export default async function TeachersPage() {
       <div className="container mx-auto px-4 py-8">
         <TeacherListClient initialTeachers={sortedTeachers} />
 
-        <footer className="text-center mt-16 pb-8">
+        <footer className="text-center mt-16 pb-8 space-y-2">
             <p className="text-sm text-muted-foreground">
                 Desenvolvido com a ajuda da IA do Firebase.
             </p>
+            <Button asChild variant="link" size="sm">
+              <Link href="/moderation">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Painel de Moderação
+              </Link>
+            </Button>
         </footer>
       </div>
     </MainLayout>

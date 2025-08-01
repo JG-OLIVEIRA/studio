@@ -8,6 +8,10 @@ export interface Review {
   upvotes: number;
   downvotes: number;
   createdAt: string;
+  report_count: number;
+  report_approvals: number;
+  teacherName?: string;
+  subjectName?: string;
 }
 
 export interface Teacher {

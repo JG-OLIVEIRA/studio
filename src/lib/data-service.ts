@@ -116,6 +116,8 @@ export async function getSubjects(): Promise<Subject[]> {
                         upvotes: row.review_upvotes,
                         downvotes: row.review_downvotes,
                         createdAt: (row.created_at || new Date()).toISOString(),
+                        report_count: 0,
+                        report_approvals: 0,
                     });
                 }
             }
@@ -301,6 +303,8 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                 r.upvotes as review_upvotes,
                 r.downvotes as review_downvotes,
                 r.created_at as review_created_at,
+                r.report_count as review_report_count,
+                r.report_approvals as review_report_approvals,
                 s.name as subject_name
             FROM reviews r
             JOIN teachers t ON r.teacher_id = t.id
@@ -322,6 +326,8 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                         upvotes: row.review_upvotes,
                         downvotes: row.review_downvotes,
                         createdAt: (row.created_at || new Date()).toISOString(),
+                        report_count: row.review_report_count,
+                        report_approvals: row.review_report_approvals,
                     });
                 }
                 if (row.subject_name) {
@@ -341,6 +347,92 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
     } catch (error) {
         console.error("Erro ao buscar professores com estatísticas globais:", error);
         return [];
+    } finally {
+        client.release();
+    }
+}
+
+export async function getReportedReviews(): Promise<Review[]> {
+    const client = await pool.connect();
+    try {
+        const query = `
+            SELECT
+                r.id,
+                r.text,
+                r.rating,
+                r.upvotes,
+                r.downvotes,
+                r.report_count,
+                r.report_approvals,
+                r.created_at,
+                t.name as teacher_name,
+                s.name as subject_name
+            FROM reviews r
+            JOIN teachers t ON r.teacher_id = t.id
+            JOIN subjects s ON r.subject_id = s.id
+            WHERE r.reported = true
+            ORDER BY r.report_count DESC, r.created_at ASC;
+        `;
+        const result = await client.query(query);
+        return result.rows.map(row => ({
+            id: row.id,
+            text: row.text,
+            rating: row.rating,
+            upvotes: row.upvotes,
+            downvotes: row.downvotes,
+            report_count: row.report_count,
+            report_approvals: row.report_approvals,
+            createdAt: (row.created_at || new Date()).toISOString(),
+            teacherName: row.teacher_name,
+            subjectName: row.subject_name,
+        }));
+    } catch (error) {
+        console.error("Erro ao buscar avaliações denunciadas:", error);
+        return [];
+    } finally {
+        client.release();
+    }
+}
+
+export async function approveReport(reviewId: number): Promise<void> {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        const updateResult = await client.query(
+            'UPDATE reviews SET report_approvals = report_approvals + 1 WHERE id = $1 RETURNING report_approvals',
+            [reviewId]
+        );
+        
+        if (updateResult.rowCount === 0) {
+            throw new Error('Avaliação não encontrada.');
+        }
+
+        const newApprovalCount = updateResult.rows[0].report_approvals;
+        if (newApprovalCount >= 5) {
+            await client.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
+        }
+
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error("Erro ao aprovar denúncia:", error);
+        throw new Error('Falha ao aprovar denúncia.');
+    } finally {
+        client.release();
+    }
+}
+
+export async function rejectReport(reviewId: number): Promise<void> {
+    const client = await pool.connect();
+    try {
+        await client.query(
+            'UPDATE reviews SET reported = false, report_count = 0, report_approvals = 0 WHERE id = $1',
+            [reviewId]
+        );
+    } catch (error) {
+        console.error("Erro ao rejeitar denúncia:", error);
+        throw new Error('Falha ao rejeitar denúncia.');
     } finally {
         client.release();
     }

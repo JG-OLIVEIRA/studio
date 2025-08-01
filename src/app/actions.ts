@@ -58,3 +58,19 @@ export async function reportReview(reviewId: number) {
 export async function getAllTeachers() {
     return DataService.getAllTeachers();
 }
+
+/**
+ * Server action to approve a reported review, potentially deleting it.
+ */
+export async function approveReportedReview(reviewId: number) {
+    await DataService.approveReport(reviewId);
+    revalidatePath('/moderation');
+}
+
+/**
+ * Server action to reject a reported review, marking it as safe.
+ */
+export async function rejectReportedReview(reviewId: number) {
+    await DataService.rejectReport(reviewId);
+    revalidatePath('/moderation');
+}
