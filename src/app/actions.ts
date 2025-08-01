@@ -21,13 +21,6 @@ export async function handleAddTeacherOrReview(data: {
 
 
 /**
- * Server action to fetch all subjects data.
- */
-export async function getSubjectsData() {
-    return DataService.getSubjects();
-}
-
-/**
  * Server action to upvote a review.
  */
 export async function upvoteReview(reviewId: number) {
