@@ -399,7 +399,7 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                         upvotes: row.review_upvotes,
                         downvotes: row.review_downvotes,
                         reported: row.review_reported,
-                        createdAt: (row.review_created_at || new Date()).toISOString(),
+                        createdAt: (row.created_at || new Date()).toISOString(),
                     });
                 }
                 if (row.subject_name) {
