@@ -364,3 +364,38 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
         client.release();
     }
 }
+
+/**
+ * Runs moderation on all existing reviews and deletes problematic ones.
+ * @returns {Promise<{total: number, removed: number}>} - The total number of reviews processed and removed.
+ */
+export async function moderateAllReviews(): Promise<{ total: number; removed: number }> {
+    const client = await pool.connect();
+    let removedCount = 0;
+    
+    try {
+        await initializeDatabase();
+        const reviewsResult = await client.query('SELECT id, text FROM reviews');
+        const reviews = reviewsResult.rows;
+        const totalCount = reviews.length;
+
+        for (const review of reviews) {
+            try {
+                const moderationResult = await moderateReview({ reviewText: review.text });
+                if (moderationResult.isProblematic) {
+                    await client.query('DELETE FROM reviews WHERE id = $1', [review.id]);
+                    removedCount++;
+                    console.log(`Review ${review.id} removida por: ${moderationResult.reason}`);
+                }
+            } catch (e) {
+                console.error(`Erro ao moderar review ${review.id}:`, e);
+            }
+        }
+        return { total: totalCount, removed: removedCount };
+    } catch (error) {
+        console.error("Erro no processo de moderação em massa:", error);
+        throw new Error("Falha ao executar a moderação em massa.");
+    } finally {
+        client.release();
+    }
+}
