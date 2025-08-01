@@ -54,6 +54,16 @@ export async function initializeDatabase(): Promise<void> {
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS moderation_votes (
+                id SERIAL PRIMARY KEY,
+                review_id INTEGER NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+                student_id VARCHAR(255) NOT NULL,
+                vote_type VARCHAR(10) NOT NULL, -- 'approve' or 'reject'
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(review_id, student_id)
+            );
+        `);
         
         await client.query('COMMIT');
         
@@ -211,12 +221,15 @@ export async function addTeacherOrReview(data: {
 
         // For each subject, check for duplicates and then create the review
         for (const subjectName of data.subjectNames) {
+            let subjectId;
             const subjectResult = await client.query('SELECT id FROM subjects WHERE name = $1', [subjectName]);
             if (subjectResult.rowCount === 0) {
-                console.warn(`Matéria "${subjectName}" não encontrada. Pulando.`);
-                continue; 
+                // If subject doesn't exist, create it.
+                const newSubjectResult = await client.query('INSERT INTO subjects (name) VALUES ($1) RETURNING id', [subjectName]);
+                subjectId = newSubjectResult.rows[0].id;
+            } else {
+                subjectId = subjectResult.rows[0].id;
             }
-            const subjectId = subjectResult.rows[0].id;
             
             if(data.reviewText.trim()) {
                 const duplicateCheck = await client.query(
@@ -277,7 +290,7 @@ export async function reportReview(reviewId: number): Promise<void> {
     const client = await pool.connect();
     try {
         await client.query(
-            'UPDATE reviews SET reported = true WHERE id = $1',
+            'UPDATE reviews SET reported = true, report_count = 1 WHERE id = $1',
             [reviewId]
         );
     } catch (error) {
@@ -377,6 +390,47 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
     }
 }
 
+export async function getRecentReviews(): Promise<Review[]> {
+    const client = await pool.connect();
+    try {
+        const query = `
+            SELECT
+                r.id,
+                r.text,
+                r.rating,
+                r.upvotes,
+                r.downvotes,
+                r.created_at,
+                t.name as teacher_name,
+                s.name as subject_name
+            FROM reviews r
+            JOIN teachers t ON r.teacher_id = t.id
+            JOIN subjects s ON r.subject_id = s.id
+            WHERE r.reported = false AND r.text IS NOT NULL AND r.text <> ''
+            ORDER BY r.created_at DESC
+            LIMIT 5;
+        `;
+        const result = await client.query(query);
+        return result.rows.map(row => ({
+            id: row.id,
+            text: row.text,
+            rating: row.rating,
+            upvotes: row.upvotes,
+            downvotes: row.downvotes,
+            report_count: 0, // Not needed for this view
+            createdAt: (row.created_at || new Date()).toISOString(),
+            teacherName: row.teacher_name,
+            subjectName: row.subject_name,
+        }));
+    } catch (error) {
+        console.error("Erro ao buscar avaliações recentes:", error);
+        return [];
+    } finally {
+        client.release();
+    }
+}
+
+
 export async function getReportedReviews(): Promise<Review[]> {
     const client = await pool.connect();
     try {
@@ -419,6 +473,8 @@ export async function getReportedReviews(): Promise<Review[]> {
 
 export async function approveReport(reviewId: number): Promise<void> {
     const client = await pool.connect();
+    const APPROVAL_THRESHOLD = 5;
+
     try {
         await client.query('BEGIN');
 
@@ -432,7 +488,7 @@ export async function approveReport(reviewId: number): Promise<void> {
         }
 
         const newApprovalCount = updateResult.rows[0].report_count;
-        if (newApprovalCount >= 5) {
+        if (newApprovalCount >= APPROVAL_THRESHOLD) {
             await client.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
         }
 

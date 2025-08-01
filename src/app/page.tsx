@@ -1,17 +1,22 @@
 
-import { BookOpen, Megaphone, ShieldCheck } from 'lucide-react';
+import { BookOpen, Megaphone, ShieldCheck, MessageSquareQuote } from 'lucide-react';
 import Link from 'next/link';
-import { getTeachersWithGlobalStats } from '@/lib/data-service';
+import { getTeachersWithGlobalStats, getRecentReviews } from '@/lib/data-service';
 import { Button } from '@/components/ui/button';
 import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dialog';
 import { handleAddTeacherOrReview } from './actions';
 import TeacherListClient from '@/components/teacher-list-client';
 import MainLayout from '@/components/main-layout';
 import WelcomeReviewHandler from '@/components/welcome-review-handler';
+import RecentReviews from '@/components/recent-reviews';
+import { Separator } from '@/components/ui/separator';
 
 export default async function TeachersPage() {
   // Fetch all data in parallel
-  const teachers = await getTeachersWithGlobalStats();
+  const [teachers, recentReviews] = await Promise.all([
+    getTeachersWithGlobalStats(),
+    getRecentReviews()
+  ]);
   
   // Get all unique subject names from the teachers list
   const allSubjectNames = Array.from(
@@ -73,10 +78,26 @@ export default async function TeachersPage() {
         onSubmit={handleAddTeacherOrReview}
       />
       <div className="container mx-auto px-4 py-8">
+        
+        {recentReviews.length > 0 && (
+          <>
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-6">
+                <MessageSquareQuote className="h-7 w-7 text-primary" />
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                  Últimas Avaliações
+                </h2>
+              </div>
+              <RecentReviews initialReviews={recentReviews} />
+            </div>
+            <Separator className="my-12"/>
+          </>
+        )}
+
         <TeacherListClient 
           initialTeachers={sortedTeachers} 
           allSubjectNames={allSubjectNames}
-          onSubmit={handleAddTeacherOrReview}
+          allTeachers={sortedTeachers}
         />
 
         <footer className="text-center mt-16 pb-8 space-y-2">

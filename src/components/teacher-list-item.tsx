@@ -6,20 +6,20 @@ import type { Teacher } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import StarRating from './star-rating';
 import { Badge } from './ui/badge';
-import { MessageSquare, Eye, Edit } from 'lucide-react';
+import { MessageSquare, Eye } from 'lucide-react';
 import { Button } from './ui/button';
 import { ViewReviewsDialog } from './view-reviews-dialog';
 import { AddTeacherOrReviewDialog } from './add-teacher-or-review-dialog';
 import { cn } from '@/lib/utils';
+import { handleAddTeacherOrReview } from '@/app/actions';
 
 interface TeacherListItemProps {
   teacher: Teacher;
   allSubjectNames: string[];
   allTeachers: Teacher[];
-  onSubmit: (data: any) => Promise<void>;
 }
 
-export default function TeacherListItem({ teacher, allSubjectNames, allTeachers, onSubmit }: TeacherListItemProps) {
+export default function TeacherListItem({ teacher, allSubjectNames, allTeachers }: TeacherListItemProps) {
   const { name, averageRating = 0, reviews, subjects } = teacher;
   const hasReviews = reviews.length > 0;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -37,7 +37,7 @@ export default function TeacherListItem({ teacher, allSubjectNames, allTeachers,
     <AddTeacherOrReviewDialog
       allSubjectNames={allSubjectNames}
       allTeachers={allTeachers}
-      onSubmit={onSubmit}
+      onSubmit={handleAddTeacherOrReview}
       triggerElement={
         <Card 
             className={cn(
