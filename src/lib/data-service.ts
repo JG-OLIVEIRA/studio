@@ -439,7 +439,7 @@ export async function approveReport(reviewId: number, studentId: string): Promis
             [studentId, reviewId]
         );
 
-        if (existingVote.rowCount > 0) {
+        if (existingVote.rowCount && existingVote.rowCount > 0) {
             throw new Error('Você já votou nesta avaliação.');
         }
         
@@ -487,7 +487,7 @@ export async function rejectReport(reviewId: number, studentId: string): Promise
             [studentId, reviewId]
         );
 
-        if (existingVote.rowCount > 0) {
+        if (existingVote.rowCount && existingVote.rowCount > 0) {
             throw new Error('Você já votou nesta avaliação.');
         }
 
@@ -514,3 +514,5 @@ export async function rejectReport(reviewId: number, studentId: string): Promise
         client.release();
     }
 }
+
+    
