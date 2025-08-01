@@ -13,7 +13,7 @@ export interface HeaderProps {
 }
 
 const getIconComponent = (iconName: IconName) => {
-    const Icon = LucideIcons[iconName];
+    const Icon = LucideIcons[iconName] as React.ElementType;
     return Icon || LucideIcons.GraduationCap;
 };
 
