@@ -8,6 +8,7 @@ import { Badge } from './ui/badge';
 import { MessageSquare, Eye } from 'lucide-react';
 import { Button } from './ui/button';
 import { ViewReviewsDialog } from './view-reviews-dialog';
+import { cn } from '@/lib/utils';
 
 interface TeacherListItemProps {
   teacher: Teacher;
@@ -18,7 +19,10 @@ export default function TeacherListItem({ teacher }: TeacherListItemProps) {
   const hasReviews = reviews.length > 0;
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col justify-between">
+    <Card className={cn(
+        "hover:shadow-lg transition-all duration-300 flex flex-col justify-between",
+        "border-2 border-transparent hover:border-primary"
+    )}>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold">{name}</CardTitle>
       </CardHeader>
