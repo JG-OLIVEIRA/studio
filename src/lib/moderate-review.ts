@@ -1,8 +1,8 @@
 
 'use server';
 /**
- * @fileoverview This file contains the Genkit AI moderation flow,
- * which is used to validate user-submitted reviews for inappropriate content.
+ * @fileoverview This file initializes the Genkit AI instance and
+ * contains the moderation flow for validating user-submitted reviews.
  */
 
 import { genkit } from 'genkit';
