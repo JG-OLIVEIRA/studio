@@ -156,118 +156,120 @@ export function AddTeacherOrReviewDialog({
                 Selecione o professor e a(s) matéria(s) que ele leciona. A avaliação será aplicada a cada matéria selecionada.
             </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="h-full overflow-auto pr-6">
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                    <FormField
-                        control={form.control}
-                        name="teacherName"
-                        render={({ field }) => (
+            <ScrollArea className="h-full overflow-auto pr-6 -mr-6">
+                <div className="pr-6">
+                    <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="teacherName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Professor</FormLabel>
+                                    <FormControl>
+                                        <Combobox
+                                            options={teacherOptions}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Selecione ou crie um professor..."
+                                            createLabel="Criar novo professor:"
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        
+                        <FormField
+                            control={form.control}
+                            name="subjectNames"
+                            render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Professor</FormLabel>
+                                <FormLabel>Matéria(s) Lecionada(s)</FormLabel>
                                 <FormControl>
-                                    <Combobox
-                                        options={teacherOptions}
-                                        value={field.value}
+                                    <MultiSelect
+                                        options={subjectOptions}
+                                        selected={field.value}
                                         onChange={field.onChange}
-                                        placeholder="Selecione ou crie um professor..."
-                                        createLabel="Criar novo professor:"
+                                        placeholder="Selecione as matérias..."
                                     />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
-                        )}
-                    />
-                    
-                    <FormField
-                        control={form.control}
-                        name="subjectNames"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Matéria(s) Lecionada(s)</FormLabel>
-                            <FormControl>
-                                <MultiSelect
-                                    options={subjectOptions}
-                                    selected={field.value}
-                                    onChange={field.onChange}
-                                    placeholder="Selecione as matérias..."
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    
-                    <FormField
-                        control={form.control}
-                        name="reviewText"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Avaliação Escrita</FormLabel>
-                            <FormControl>
-                                <Textarea
-                                placeholder="Compartilhe sua experiência com este professor..."
-                                {...field}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="reviewRating"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Nota Geral</FormLabel>
-                            <FormControl>
-                                <div className="flex items-center gap-1">
-                                {[...Array(5)].map((_, index) => {
-                                    const ratingValue = index + 1;
-                                    return (
-                                    <button
-                                        type="button"
-                                        key={ratingValue}
-                                        onClick={() => field.onChange(ratingValue)}
-                                        onMouseEnter={() => setHoverRating(ratingValue)}
-                                        onMouseLeave={() => setHoverRating(0)}
-                                        className="p-0 bg-transparent border-none"
-                                    >
-                                        <Star
-                                        className={cn(
-                                            'h-6 w-6 cursor-pointer',
-                                            ratingValue <= (hoverRating || field.value)
-                                            ? 'text-primary fill-current'
-                                            : 'text-muted-foreground/50'
-                                        )}
-                                        />
-                                    </button>
-                                    );
-                                })}
-                                </div>
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
+                            )}
+                        />
+                        
+                        <FormField
+                            control={form.control}
+                            name="reviewText"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Avaliação Escrita</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                    placeholder="Compartilhe sua experiência com este professor..."
+                                    {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="reviewRating"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Nota Geral</FormLabel>
+                                <FormControl>
+                                    <div className="flex items-center gap-1">
+                                    {[...Array(5)].map((_, index) => {
+                                        const ratingValue = index + 1;
+                                        return (
+                                        <button
+                                            type="button"
+                                            key={ratingValue}
+                                            onClick={() => field.onChange(ratingValue)}
+                                            onMouseEnter={() => setHoverRating(ratingValue)}
+                                            onMouseLeave={() => setHoverRating(0)}
+                                            className="p-0 bg-transparent border-none"
+                                        >
+                                            <Star
+                                            className={cn(
+                                                'h-6 w-6 cursor-pointer',
+                                                ratingValue <= (hoverRating || field.value)
+                                                ? 'text-primary fill-current'
+                                                : 'text-muted-foreground/50'
+                                            )}
+                                            />
+                                        </button>
+                                        );
+                                    })}
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
-                    <Alert variant="destructive" className="bg-destructive/10 text-destructive-foreground border-destructive/20">
-                        <ShieldAlert className="h-4 w-4 !text-destructive" />
-                        <AlertTitle className="font-semibold !text-destructive">Aviso</AlertTitle>
-                        <AlertDescription className="!text-destructive/80">
-                            Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas serão removidas pela moderação de IA.
-                        </AlertDescription>
-                    </Alert>
+                        <Alert variant="destructive" className="bg-destructive/10 text-destructive-foreground border-destructive/20">
+                            <ShieldAlert className="h-4 w-4 !text-destructive" />
+                            <AlertTitle className="font-semibold !text-destructive">Aviso</AlertTitle>
+                            <AlertDescription className="!text-destructive/80">
+                                Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas serão removidas pela moderação de IA.
+                            </AlertDescription>
+                        </Alert>
 
 
-                    <div className="flex justify-end gap-2 pt-4">
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                        <Button type="submit" disabled={form.formState.isSubmitting}>
-                            {form.formState.isSubmitting ? "Enviando..." : "Enviar Avaliação"}
-                        </Button>
-                    </div>
-                </form>
-                </Form>
+                        <div className="flex justify-end gap-2 pt-4">
+                            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                            <Button type="submit" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting ? "Enviando..." : "Enviar Avaliação"}
+                            </Button>
+                        </div>
+                    </form>
+                    </Form>
+                </div>
             </ScrollArea>
         </DialogContent>
     </Dialog>
