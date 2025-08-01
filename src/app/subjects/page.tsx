@@ -28,7 +28,7 @@ export default async function SubjectsPage() {
             
             <footer className="text-center mt-16 pb-8">
                 <p className="text-sm text-muted-foreground">
-                    Desenvolvido por Jorge Oliveira com a ajuda da IA do Firebase.
+                    Desenvolvido com a ajuda da IA do Firebase.
                 </p>
             </footer>
         </div>
