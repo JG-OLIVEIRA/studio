@@ -2,9 +2,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { Review } from "@/lib/types";
-import { Users, MessageSquareText, BookOpen, ShieldAlert, Star } from "lucide-react";
+import { Users, MessageSquareText, BookOpen, ShieldAlert } from "lucide-react";
 
 interface DashboardClientProps {
     stats: {
@@ -34,14 +32,6 @@ const StatCard = ({ title, value, icon: Icon }: StatCardProps) => (
 );
 
 export default function DashboardClient({ stats }: DashboardClientProps) {
-
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-    };
 
     return (
         <div className="space-y-6">
