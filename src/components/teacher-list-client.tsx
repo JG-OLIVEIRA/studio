@@ -46,15 +46,15 @@ export default function TeacherListClient({ initialTeachers }: TeacherListClient
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {noResults ? (
-             <div className="text-center text-muted-foreground py-12 border-dashed border-2 rounded-lg">
+             <div className="col-span-full text-center text-muted-foreground py-12 border-dashed border-2 rounded-lg">
                 <h2 className="text-xl font-semibold">Nenhum resultado encontrado para "{searchQuery}".</h2>
                 <p className="mt-2">Tente um termo de busca diferente.</p>
             </div>
         ) : (
-            filteredTeachers.map((teacher, index) => (
-              <TeacherListItem key={teacher.id} teacher={teacher} rank={index + 1} />
+            filteredTeachers.map((teacher) => (
+              <TeacherListItem key={teacher.id} teacher={teacher} />
             ))
         )}
       </div>
