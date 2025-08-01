@@ -258,7 +258,7 @@ export function AddTeacherOrReviewDialog({
                             />
                         </div>
                     </ScrollArea>
-                    <div className="p-6 pt-4 border-t bg-background">
+                    <div className="p-6 pt-4 border-t bg-background rounded-b-lg">
                          <Alert variant="destructive" className="bg-destructive/10 text-destructive-foreground border-destructive/20 mb-4">
                             <ShieldAlert className="h-4 w-4 !text-destructive" />
                             <AlertTitle className="font-semibold !text-destructive">Aviso</AlertTitle>
