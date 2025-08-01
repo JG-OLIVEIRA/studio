@@ -3,10 +3,8 @@
 const nextConfig = {
   reactStrictMode: true,
   webpack: (config, { isServer, dev }) => {
-    // Disable webpack cache in development to prevent issues with corrupted cache files.
-    if (dev) {
-      config.cache = false;
-    }
+    // We are removing the cache disabling configuration as it may interfere
+    // with Next.js's Fast Refresh and cause server restart loops.
     return config;
   },
 };
