@@ -160,9 +160,9 @@ export function AddTeacherOrReviewDialog({
                 </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="grid h-full">
-                    <ScrollArea className="h-full overflow-auto">
-                        <div className="space-y-4 px-6">
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="grid grid-rows-[1fr,auto] h-[70vh]">
+                    <ScrollArea className="h-full">
+                        <div className="space-y-4 px-6 pb-6">
                             <FormField
                                 control={form.control}
                                 name="teacherName"
@@ -256,21 +256,22 @@ export function AddTeacherOrReviewDialog({
                                     </FormItem>
                                 )}
                             />
-
-                            <Alert variant="destructive" className="bg-destructive/10 text-destructive-foreground border-destructive/20">
-                                <ShieldAlert className="h-4 w-4 !text-destructive" />
-                                <AlertTitle className="font-semibold !text-destructive">Aviso</AlertTitle>
-                                <AlertDescription className="!text-destructive/80">
-                                    Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas serão removidas.
-                                </AlertDescription>
-                            </Alert>
                         </div>
                     </ScrollArea>
-                    <div className="flex justify-end gap-2 p-6 pt-4 border-t bg-background">
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                        <Button type="submit" disabled={form.formState.isSubmitting}>
-                            {form.formState.isSubmitting ? "Enviando..." : "Enviar Avaliação"}
-                        </Button>
+                    <div className="p-6 pt-4 border-t bg-background">
+                         <Alert variant="destructive" className="bg-destructive/10 text-destructive-foreground border-destructive/20 mb-4">
+                            <ShieldAlert className="h-4 w-4 !text-destructive" />
+                            <AlertTitle className="font-semibold !text-destructive">Aviso</AlertTitle>
+                            <AlertDescription className="!text-destructive/80">
+                                Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas serão removidas.
+                            </AlertDescription>
+                        </Alert>
+                        <div className="flex justify-end gap-2">
+                            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                            <Button type="submit" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting ? "Enviando..." : "Enviar Avaliação"}
+                            </Button>
+                        </div>
                     </div>
                 </form>
             </Form>
