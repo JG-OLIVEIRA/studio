@@ -6,7 +6,7 @@
  * user-submitted review is appropriate for the platform.
  */
 
-import { ai } from '@/ai/index';
+import { ai } from '@/lib/genkit';
 import { z } from 'zod';
 
 // Zod schema for the input of the moderation flow.

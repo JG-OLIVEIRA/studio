@@ -1,8 +1,8 @@
+'use server';
 /**
- * @fileoverview This file initializes the Genkit AI instance with necessary plugins.
- * It configures the AI with Google AI for generative capabilities and Firebase
- * for operational support like tracing. This setup is crucial for any AI-driven
- * functionality within the application.
+ * @fileoverview This file initializes the Genkit AI instance and defines AI flows.
+ * It configures the AI with Google AI and Firebase plugins, and it also
+ * contains the moderation flow for validating user-submitted reviews.
  */
 import { genkit } from 'genkit';
 import { firebase } from '@genkit-ai/firebase';
