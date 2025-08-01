@@ -12,8 +12,13 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 export function LoginForm() {
   const [state, action] = useActionState(login, undefined);
 
+  const formAction = (formData: FormData) => {
+    const password = formData.get('password') as string;
+    action(password);
+  };
+
   return (
-    <form action={action} className="space-y-3">
+    <form action={formAction} className="space-y-3">
       <div className="flex-1 rounded-lg bg-gray-800 px-6 pb-4 pt-8">
         <h2 className="mb-3 text-xl text-gray-200">
           Faça login para continuar.
