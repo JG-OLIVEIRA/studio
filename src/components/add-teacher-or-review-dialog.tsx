@@ -160,7 +160,7 @@ export function AddTeacherOrReviewDialog({
             </DialogDescription>
             </DialogHeader>
             <ScrollArea className="h-full overflow-auto pr-6 -mr-6">
-                <div className="pr-6">
+                <div className="pr-1">
                     <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                         <FormField
