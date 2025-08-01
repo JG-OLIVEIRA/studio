@@ -55,9 +55,10 @@ export async function getSubjects(): Promise<Subject[]> {
                     reviews.subject_id
                 FROM reviews
                 JOIN teachers ON reviews.teacher_id = teachers.id
-                WHERE reviews.reported = false
+                WHERE reviews.reported = false AND teachers.name != 'Noemi Rosa'
             ) tr ON s.id = tr.subject_id
             LEFT JOIN teachers t ON tr.teacher_id = t.id
+            WHERE t.name IS NULL OR t.name != 'Noemi Rosa'
             ORDER BY s.name, t.name;
         `;
         
@@ -237,7 +238,7 @@ export async function reportReview(reviewId: number): Promise<void> {
 export async function getAllTeachers(): Promise<{ id: number; name: string }[]> {
     const client = await pool.connect();
     try {
-        const result = await client.query('SELECT id, name FROM teachers ORDER BY name');
+        const result = await client.query("SELECT id, name FROM teachers WHERE name != 'Noemi Rosa' ORDER BY name");
         return result.rows;
     } catch (error) {
         console.error("Erro ao buscar todos os professores:", error);
@@ -251,7 +252,7 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
     const client = await pool.connect();
     try {
         // First, get all teachers to ensure everyone is listed, even those with no reviews yet.
-        const allTeachersResult = await client.query('SELECT id, name FROM teachers ORDER BY name');
+        const allTeachersResult = await client.query("SELECT id, name FROM teachers WHERE name != 'Noemi Rosa' ORDER BY name");
         const teachersMap: Map<number, Teacher> = new Map();
 
         allTeachersResult.rows.forEach(t => {
@@ -280,7 +281,7 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
             FROM reviews r
             JOIN teachers t ON r.teacher_id = t.id
             JOIN subjects s ON r.subject_id = s.id
-            WHERE r.reported = false
+            WHERE r.reported = false AND t.name != 'Noemi Rosa'
             ORDER BY t.name, s.name;
         `;
         const reviewsResult = await client.query(reviewsQuery);
@@ -338,7 +339,7 @@ export async function getRecentReviews(): Promise<Review[]> {
             FROM reviews r
             JOIN teachers t ON r.teacher_id = t.id
             JOIN subjects s ON r.subject_id = s.id
-            WHERE r.reported = false AND r.text IS NOT NULL AND r.text <> ''
+            WHERE r.reported = false AND r.text IS NOT NULL AND r.text <> '' AND t.name != 'Noemi Rosa'
             ORDER BY r.created_at DESC
             LIMIT 5;
         `;
