@@ -23,7 +23,7 @@ const GenerateReviewInsightsOutputSchema = z.object({
   insights: z
     .string()
     .describe(
-      'AI-generated insights from the student reviews, written in a humorous and funny style.'
+      'AI-generated insights from the student reviews, focusing on teaching style, difficulty, and exams.'
     ),
   passWithoutStudyingChance: z
     .number()
@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
   name: 'generateReviewInsightsPrompt',
   input: {schema: GenerateReviewInsightsInputSchema},
   output: {schema: GenerateReviewInsightsOutputSchema},
-  prompt: `Você é um assistente de IA com um ótimo senso de humor, encarregado de analisar avaliações de alunos para professores.
+  prompt: `Você é um assistente de IA encarregado de analisar avaliações de alunos para professores.
 
   Professor: {{{teacherName}}}
   Matéria: {{{subject}}}
@@ -53,10 +53,12 @@ const prompt = ai.definePrompt({
   {{/each}}
 
   Sua missão é dupla:
-  1.  Gerar um resumo conciso (menos de 200 palavras) e ENGRAÇADO sobre os pontos fortes e fracos do professor. Use um tom divertido, como se estivesse contando um segredo para um colega.
-  2.  Com base nas avaliações, calcule a "Chance de Passar Sem Estudar". Esta é uma nota de 1 a 5, onde 1 é "esquece, precisa virar um monge tibetano nos estudos" e 5 é "dá pra passar jogando videogame o semestre todo". Seja honesto, mas divertido na sua avaliação.
+  1.  Gerar um resumo curto e objetivo sobre os pontos principais das avaliações. Foque em:
+      - **Didática e Dificuldade:** Como é o nível de dificuldade para entender a matéria com este professor? A didática é clara?
+      - **Provas e Avaliações:** O que os alunos dizem sobre as provas? São justas, difíceis, baseadas na matéria dada?
+  2.  Com base nas avaliações, calcule a "Chance de Passar Sem Estudar". Esta é uma nota de 1 a 5, onde 1 é "esquece, precisa estudar muito" e 5 é "dá pra passar com o pé nas costas". Seja realista.
 
-  A resposta deve ser em português do Brasil.
+  A resposta deve ser em português do Brasil. O resumo deve ser conciso e direto ao ponto.
   `,
 });
 
@@ -73,7 +75,7 @@ const generateReviewInsightsFlow = ai.defineFlow(
     // Handle the case where there are no reviews with text to avoid calling the AI with an empty prompt.
     if (nonEmptyReviews.length === 0) {
       return {
-        insights: 'Ainda não há avaliações escritas suficientes para que a IA possa gerar uma análise divertida. Adicione uma avaliação para começar!',
+        insights: 'Ainda não há avaliações escritas suficientes para que a IA possa gerar uma análise. Adicione uma avaliação para começar!',
         passWithoutStudyingChance: 1,
       };
     }
