@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -184,7 +183,7 @@ export function AddTeacherOrReviewDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
         {!isTeacherPrefilled && trigger}
         {isTeacherPrefilled && triggerElement}
-        <DialogContent className="sm:max-w-xl grid-rows-[auto,1fr,auto] p-0">
+        <DialogContent className="sm:max-w-xl grid-rows-[auto,1fr,auto] p-0 max-h-[90vh]">
             <DialogHeader className="px-6 pt-6">
                 <DialogTitle>Adicionar nova avaliação {isTeacherPrefilled ? `para ${initialTeacherName}`: ''}</DialogTitle>
                 <DialogDescription>
@@ -192,7 +191,7 @@ export function AddTeacherOrReviewDialog({
                 </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="grid grid-rows-[1fr,auto] h-[70vh]">
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="grid grid-rows-[1fr,auto] overflow-hidden">
                     <ScrollArea className="h-full">
                         <div className="space-y-4 px-6 pb-6">
                             <FormField

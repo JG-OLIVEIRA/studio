@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -69,7 +68,7 @@ export default function RecentReviews({ initialReviews }: RecentReviewsProps) {
       {reviews.map(review => (
         <Card key={review.id} className="bg-card/50 shadow-sm flex flex-col">
           <CardHeader className="pb-3">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <StarRating rating={review.rating} />
               <span className="text-xs text-muted-foreground">{formatDate(review.createdAt)}</span>
             </div>
@@ -83,8 +82,8 @@ export default function RecentReviews({ initialReviews }: RecentReviewsProps) {
             )}
           </CardContent>
           <CardFooter className="flex-col items-start gap-4 pt-3">
-            <div className="w-full flex justify-between items-center text-sm text-muted-foreground">
-                <div className='flex items-center gap-4'>
+            <div className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className='flex items-center gap-4 flex-wrap'>
                     <div className="flex items-center gap-1.5" title={`Professor(a) ${review.teacherName}`}>
                         <User className="h-4 w-4" />
                         <span className="font-medium truncate">{review.teacherName}</span>
@@ -95,7 +94,7 @@ export default function RecentReviews({ initialReviews }: RecentReviewsProps) {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 self-end sm:self-center">
                     <div className="flex items-center gap-1">
                         <Button
                             size="icon"

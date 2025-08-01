@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
@@ -69,31 +68,33 @@ export default function CourseFlowchart({ onCompletedChange }: CourseFlowchartPr
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
             <Lightbulb className="h-6 w-6 text-primary" />
-            Fluxograma Interativo do Curso
+            Fluxograma Interativo
         </CardTitle>
-        <CardDescription className="flex items-center gap-2">
-            <MousePointerClick className='h-4 w-4'/>
-            Clique nas matérias que você já cursou para ver recomendações de professores para as próximas.
+        <CardDescription className="flex items-start gap-2">
+            <MousePointerClick className='h-4 w-4 mt-0.5 flex-shrink-0'/>
+            <span>Clique nas matérias que você já cursou para ver recomendações para as próximas.</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col md:flex-row gap-x-2 gap-y-6">
-            {flowchartData.map(({ semester, subjects }) => (
-              <div key={semester} className="flex flex-col items-center space-y-3 flex-1 min-w-0">
-                <h3 className="font-bold text-lg px-2 py-1 rounded w-full text-center bg-background border-b-2 border-primary/50">{semester}º Período</h3>
-                <div className="flex flex-col space-y-2 w-full">
-                  {subjects.map((subject) => (
-                    <FlowchartSubjectCard 
-                        key={subject} 
-                        subjectName={subject}
-                        isCompleted={completedSubjects.has(subject)}
-                        onClick={() => handleToggleSubject(subject)} 
-                        className="w-full"
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
+        <div className="flex overflow-x-auto pb-4 -mb-4">
+            <div className="flex flex-row gap-x-2 gap-y-6 min-w-max">
+                {flowchartData.map(({ semester, subjects }) => (
+                  <div key={semester} className="flex flex-col items-center space-y-3 w-40 sm:w-44 flex-shrink-0">
+                    <h3 className="font-bold text-lg px-2 py-1 rounded w-full text-center bg-background border-b-2 border-primary/50">{semester}º Período</h3>
+                    <div className="flex flex-col space-y-2 w-full">
+                      {subjects.map((subject) => (
+                        <FlowchartSubjectCard 
+                            key={subject} 
+                            subjectName={subject}
+                            isCompleted={completedSubjects.has(subject)}
+                            onClick={() => handleToggleSubject(subject)} 
+                            className="w-full"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
         </div>
       </CardContent>
     </Card>
