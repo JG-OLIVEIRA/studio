@@ -24,13 +24,14 @@ import {
     DialogTrigger
   } from './ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Star, PlusCircle, ShieldAlert } from 'lucide-react';
+import { Star, PlusCircle, ShieldAlert, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Combobox } from './ui/combobox';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 import type { Teacher } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { MultiSelect } from './ui/multi-select';
 
 const formSchema = z.object({
   teacherName: z.string().trim()
@@ -184,27 +185,12 @@ export function AddTeacherOrReviewDialog({
                     <FormItem>
                         <FormLabel>Matéria(s) Lecionada(s)</FormLabel>
                         <FormControl>
-                            <ScrollArea className="h-32 w-full rounded-md border p-2">
-                                <div className="flex flex-wrap gap-2">
-                                {subjectOptions.map((option) => (
-                                    <Button
-                                        key={option.value}
-                                        type="button"
-                                        variant={field.value.includes(option.value) ? "default" : "outline"}
-                                        onClick={() => {
-                                            const currentSubjects = field.value;
-                                            const newSubjects = currentSubjects.includes(option.value)
-                                            ? currentSubjects.filter(sub => sub !== option.value)
-                                            : [...currentSubjects, option.value];
-                                            field.onChange(newSubjects);
-                                        }}
-                                        className="h-auto py-1 px-3"
-                                    >
-                                    {option.label}
-                                    </Button>
-                                ))}
-                                </div>
-                            </ScrollArea>
+                            <MultiSelect
+                                options={subjectOptions}
+                                selected={field.value}
+                                onChange={field.onChange}
+                                placeholder="Selecione as matérias..."
+                            />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
