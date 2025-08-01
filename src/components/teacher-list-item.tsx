@@ -5,8 +5,7 @@ import type { Teacher } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import StarRating from './star-rating';
 import { Badge } from './ui/badge';
-import { MessageSquare, Sparkles, Eye } from 'lucide-react';
-import AIReviewInsights from './ai-review-insights';
+import { MessageSquare, Eye } from 'lucide-react';
 import { Button } from './ui/button';
 import { ViewReviewsDialog } from './view-reviews-dialog';
 import { Separator } from './ui/separator';
@@ -20,11 +19,6 @@ export default function TeacherListItem({ teacher, rank }: TeacherListItemProps)
   const { name, averageRating = 0, reviews, subjects } = teacher;
   const hasReviews = reviews.length > 0;
 
-  // Since we are on the main page, the "subject" for AI context can be generic
-  // or you can decide on a primary subject if that data is available.
-  // Here we'll just pass the teacher object which now contains all reviews.
-  const teacherForAI = { ...teacher, subject: 'Geral' };
-
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
@@ -33,11 +27,6 @@ export default function TeacherListItem({ teacher, rank }: TeacherListItemProps)
             <CardTitle className="text-xl font-semibold">{name}</CardTitle>
         </div>
         <div className='flex items-center gap-1'>
-             <AIReviewInsights teacher={teacherForAI} disabled={!hasReviews}>
-                <Button variant="ghost" size="icon" disabled={!hasReviews} aria-label="Ver análise de IA">
-                    <Sparkles className="h-5 w-5" />
-                </Button>
-            </AIReviewInsights>
             <ViewReviewsDialog teacher={teacher} disabled={!hasReviews}>
                 <Button variant="ghost" size="icon" disabled={!hasReviews} aria-label="Ver avaliações">
                     <Eye className="h-5 w-5" />

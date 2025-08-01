@@ -1,24 +1,9 @@
 
 'use server';
 
-import { generateReviewInsights, type GenerateReviewInsightsInput, type GenerateReviewInsightsOutput } from "@/ai/flows/generate-review-insights";
 import { runFullModeration, type ProblematicReview } from "@/ai/flows/moderate-all-reviews-flow";
 import * as DataService from '@/lib/data-service';
 import { revalidatePath } from 'next/cache';
-
-export async function getAIInsights(input: GenerateReviewInsightsInput): Promise<GenerateReviewInsightsOutput> {
-  try {
-    const output = await generateReviewInsights(input);
-    return output;
-  } catch (error) {
-    console.error("Error generating review insights:", error);
-    // Return a structured error response that the component can handle gracefully.
-    return {
-      insights: "A IA não conseguiu gerar uma análise para este professor no momento. Isso pode acontecer se as avaliações forem muito curtas ou por um problema temporário. Tente novamente mais tarde.",
-      passWithoutStudyingChance: 0, // Return a default/neutral value
-    };
-  }
-}
 
 /**
  * Server action to handle form submission for adding a teacher or review.

@@ -1,12 +1,11 @@
 
 'use client';
 
-import { Sparkles, Eye, Trophy } from 'lucide-react';
+import { Eye, Trophy } from 'lucide-react';
 import type { Teacher } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import StarRating from './star-rating';
-import AIReviewInsights from './ai-review-insights';
 import { Button } from './ui/button';
 import { ViewReviewsDialog } from './view-reviews-dialog';
 
@@ -45,14 +44,7 @@ export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCa
           {hasReviews ? `${teacher.reviews.length} ${teacher.reviews.length === 1 ? 'avaliação' : 'avaliações'}` : "Nenhuma avaliação ainda"}
         </p>
       </CardContent>
-      <CardFooter className="grid grid-cols-2 gap-2 pt-4">
-        <AIReviewInsights teacher={teacher} disabled={!hasReviews}>
-          <Button variant="outline" className="w-full" disabled={!hasReviews}>
-            <Sparkles className="mr-2 h-4 w-4" />
-            Análise IA
-          </Button>
-        </AIReviewInsights>
-        
+      <CardFooter className="pt-4">
         <ViewReviewsDialog teacher={teacher} disabled={!hasReviews}>
             <Button variant="outline" className="w-full" disabled={!hasReviews}>
                 <Eye className="mr-2 h-4 w-4" />
