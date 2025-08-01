@@ -9,7 +9,6 @@ export interface Review {
   downvotes: number;
   createdAt: string;
   report_count: number;
-  report_approvals: number;
   teacherName?: string;
   subjectName?: string;
 }

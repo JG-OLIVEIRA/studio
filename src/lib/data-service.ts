@@ -9,16 +9,49 @@ import 'server-only';
 import type { Subject, Teacher, Review } from './types';
 import { pool } from './db';
 
-const curriculumSubjects = [
-    "Geometria Analítica", "Cálculo I", "Cálculo II", "Cálculo III", "Cálculo IV", "Álgebra", "Matemática Discreta", "Fundamentos da Computação",
-    "Álgebra Linear", "Cálculo das Probabilidades", "Algoritmos e Est. de Dados I", "Linguagem de Programação I", "Física I",
-    "Português Instrumental", "Algoritmos e Est. de Dados II", "Elementos de Lógica", "Linguagem de Programação II", "Teoria da Computação",
-    "Cálculo Numérico", "Algoritmos em Grafos", "Engenharia de Software", "Arquitetura de Computadores I", "Física II",
-    "Estruturas de Linguagens", "Banco de Dados I", "Otimização em Grafos", "Análise e Proj. de Sistemas", "Sistemas Operacionais I", "Arquitetura de Computadores II", "Eletiva Básica",
-    "Otimização Combinatória", "Banco de Dados II", "Interfaces Humano-Comp.", "Eletiva I", "Sistemas Operacionais II", "Compiladores",
-    "Computação Gráfica", "Inteligência Artificial", "Ética Comp. e Sociedade", "Metod. Cient. no Projeto Final", "Redes de Computadores I", "Arq. Avançadas de Computadores",
-    "Eletiva II", "Eletiva III", "Projeto Final", "Sistemas Distribuídos", "Eletiva IV"
-];
+let initializationPromise: Promise<void> | null = null;
+
+export async function initializeDatabase(): Promise<void> {
+    if (initializationPromise) {
+        return initializationPromise;
+    }
+
+    let resolve: () => void;
+    let reject: (reason?: any) => void;
+    initializationPromise = new Promise<void>((res, rej) => {
+        resolve = res;
+        reject = rej;
+    });
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Criar tabela de votos de moderação
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS moderation_votes (
+                id SERIAL PRIMARY KEY,
+                user_email VARCHAR(255) NOT NULL,
+                review_id INTEGER NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(user_email, review_id)
+            );
+        `);
+        
+        await client.query('COMMIT');
+        
+        console.log("Banco de dados inicializado com sucesso.");
+        resolve!();
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error("Erro durante a inicialização do banco de dados:", error);
+        initializationPromise = null;
+        reject!(new Error("Não foi possível inicializar o banco de dados."));
+    } finally {
+        client.release();
+    }
+}
+
 
 function assignIconName(subjectName: string): string {
     const name = subjectName.toLowerCase();
@@ -117,7 +150,6 @@ export async function getSubjects(): Promise<Subject[]> {
                         downvotes: row.review_downvotes,
                         createdAt: (row.created_at || new Date()).toISOString(),
                         report_count: 0,
-                        report_approvals: 0,
                     });
                 }
             }
@@ -304,7 +336,6 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                         downvotes: row.review_downvotes,
                         createdAt: (row.created_at || new Date()).toISOString(),
                         report_count: row.review_report_count,
-                        report_approvals: 0, // Default value
                     });
                 }
                 if (row.subject_name) {
@@ -357,7 +388,6 @@ export async function getReportedReviews(): Promise<Review[]> {
             upvotes: row.upvotes,
             downvotes: row.downvotes,
             report_count: row.report_count,
-            report_approvals: row.report_count, // Use report_count for approvals logic
             createdAt: (row.created_at || new Date()).toISOString(),
             teacherName: row.teacher_name,
             subjectName: row.subject_name,
@@ -370,11 +400,27 @@ export async function getReportedReviews(): Promise<Review[]> {
     }
 }
 
-export async function approveReport(reviewId: number): Promise<void> {
+export async function approveReport(reviewId: number, userEmail: string): Promise<void> {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+
+        // Check if user already voted
+        const existingVote = await client.query(
+            'SELECT id FROM moderation_votes WHERE user_email = $1 AND review_id = $2',
+            [userEmail, reviewId]
+        );
+
+        if (existingVote.rowCount > 0) {
+            throw new Error('Você já votou nesta avaliação.');
+        }
         
+        // Register the vote
+        await client.query(
+            'INSERT INTO moderation_votes (user_email, review_id) VALUES ($1, $2)',
+            [userEmail, reviewId]
+        );
+
         const updateResult = await client.query(
             'UPDATE reviews SET report_count = report_count + 1 WHERE id = $1 RETURNING report_count',
             [reviewId]
@@ -393,21 +439,48 @@ export async function approveReport(reviewId: number): Promise<void> {
     } catch (error) {
         await client.query('ROLLBACK');
         console.error("Erro ao aprovar denúncia:", error);
+        if (error instanceof Error && error.message.includes('Você já votou')) {
+            throw error;
+        }
         throw new Error('Falha ao aprovar denúncia.');
     } finally {
         client.release();
     }
 }
 
-export async function rejectReport(reviewId: number): Promise<void> {
+export async function rejectReport(reviewId: number, userEmail: string): Promise<void> {
     const client = await pool.connect();
     try {
+        await client.query('BEGIN');
+
+        // Check if user already voted
+        const existingVote = await client.query(
+            'SELECT id FROM moderation_votes WHERE user_email = $1 AND review_id = $2',
+            [userEmail, reviewId]
+        );
+
+        if (existingVote.rowCount > 0) {
+            throw new Error('Você já votou nesta avaliação.');
+        }
+
+        // Register the vote
+        await client.query(
+            'INSERT INTO moderation_votes (user_email, review_id) VALUES ($1, $2)',
+            [userEmail, reviewId]
+        );
+
         await client.query(
             'UPDATE reviews SET reported = false, report_count = 0 WHERE id = $1',
             [reviewId]
         );
+
+        await client.query('COMMIT');
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error("Erro ao rejeitar denúncia:", error);
+        if (error instanceof Error && error.message.includes('Você já votou')) {
+            throw error;
+        }
         throw new Error('Falha ao rejeitar denúncia.');
     } finally {
         client.release();

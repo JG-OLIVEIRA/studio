@@ -2,10 +2,15 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import type { Review } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { ThumbsUp, ThumbsDown, User, Tag, Calendar, Quote, ShieldAlert } from 'lucide-react';
+import { Input } from './ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
+import { ThumbsUp, ThumbsDown, User, Tag, Calendar, Quote, ShieldAlert, LogIn } from 'lucide-react';
 import { approveReportedReview, rejectReportedReview } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from './ui/badge';
@@ -16,31 +21,43 @@ interface ModerationClientProps {
 }
 
 const APPROVAL_THRESHOLD = 5;
-const VOTED_REVIEWS_STORAGE_KEY = 'votedReviews';
+const USER_INFO_KEY = 'moderationUserInfo';
+
+const loginSchema = z.object({
+    email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
+    studentId: z.string().regex(/^\d{9}$/, { message: "A matrícula deve conter 9 dígitos." })
+        .refine(val => {
+            const currentYear = new Date().getFullYear();
+            const startYear = parseInt(val.substring(0, 4), 10);
+            return startYear > 2000 && startYear <= currentYear;
+        }, { message: "Ano de matrícula inválido." }),
+});
+
+type LoginValues = z.infer<typeof loginSchema>;
 
 export default function ModerationClient({ initialReviews }: ModerationClientProps) {
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
-  const [votedOn, setVotedOn] = useState<Set<number>>(new Set());
+  const [userInfo, setUserInfo] = useState<{email: string, studentId: string} | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   useEffect(() => {
     try {
-      const storedVoted = localStorage.getItem(VOTED_REVIEWS_STORAGE_KEY);
-      if (storedVoted) {
-        setVotedOn(new Set(JSON.parse(storedVoted)));
+      const storedUserInfo = localStorage.getItem(USER_INFO_KEY);
+      if (storedUserInfo) {
+        setUserInfo(JSON.parse(storedUserInfo));
       }
     } catch (error) {
-        console.error("Failed to load voted reviews from localStorage", error);
+        console.error("Failed to load user info from localStorage", error);
     }
   }, []);
 
   const handleVote = (reviewId: number, action: 'approve' | 'reject') => {
-    if (votedOn.has(reviewId)) {
+    if (!userInfo) {
         toast({
             variant: "destructive",
-            title: "Voto já registrado",
-            description: "Você já votou nesta avaliação.",
+            title: "Identificação necessária",
+            description: "Você precisa se identificar para votar.",
         });
         return;
     }
@@ -48,19 +65,11 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
     startTransition(async () => {
       try {
         if (action === 'approve') {
-          await approveReportedReview(reviewId);
+          await approveReportedReview(reviewId, userInfo.email);
         } else {
-          await rejectReportedReview(reviewId);
+          await rejectReportedReview(reviewId, userInfo.email);
         }
         
-        const newVotedOn = new Set(votedOn).add(reviewId);
-        setVotedOn(newVotedOn);
-        try {
-            localStorage.setItem(VOTED_REVIEWS_STORAGE_KEY, JSON.stringify(Array.from(newVotedOn)));
-        } catch (error) {
-            console.error("Failed to save voted reviews to localStorage", error);
-        }
-
         setReviews(prev => prev.filter(r => r.id !== reviewId));
         toast({
           title: 'Voto registrado!',
@@ -78,6 +87,20 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
     });
   };
 
+  const form = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', studentId: '' },
+  });
+
+  const handleLogin = (values: LoginValues) => {
+    setUserInfo(values);
+    try {
+      localStorage.setItem(USER_INFO_KEY, JSON.stringify(values));
+    } catch (error) {
+      console.error("Failed to save user info to localStorage", error);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
         const date = new Date(dateString);
@@ -86,6 +109,51 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
     } catch (e) {
         return "Data inválida";
     }
+  }
+
+  if (!userInfo) {
+    return (
+        <Card className="max-w-lg mx-auto bg-card/50">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <LogIn/>
+                    Identificação Necessária
+                </CardTitle>
+                <CardDescription>
+                    Para garantir a integridade da moderação, por favor, informe seu e-mail e matrícula. Seus dados não serão exibidos publicamente.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>E-mail</FormLabel>
+                                    <FormControl><Input placeholder="seu.email@aluno.uerj.br" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="studentId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Matrícula</FormLabel>
+                                    <FormControl><Input placeholder="Ex: 20241012345" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <Button type="submit" className="w-full">Entrar na Moderação</Button>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+    );
   }
 
   if (reviews.length === 0) {
@@ -128,11 +196,11 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
              </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => handleVote(review.id, 'reject')} disabled={isPending || votedOn.has(review.id)}>
+            <Button variant="outline" onClick={() => handleVote(review.id, 'reject')} disabled={isPending}>
               <ThumbsDown className="mr-2" />
               Manter Avaliação
             </Button>
-            <Button variant="destructive" onClick={() => handleVote(review.id, 'approve')} disabled={isPending || votedOn.has(review.id)}>
+            <Button variant="destructive" onClick={() => handleVote(review.id, 'approve')} disabled={isPending}>
               <ThumbsUp className="mr-2" />
               Remover Avaliação
             </Button>

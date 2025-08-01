@@ -1,9 +1,10 @@
 
 import MainLayout from "@/components/main-layout";
-import { getReportedReviews } from "@/lib/data-service";
+import { getReportedReviews, initializeDatabase } from "@/lib/data-service";
 import ModerationClient from "@/components/moderation-client";
 
 export default async function ModerationPage() {
+    await initializeDatabase();
     const reportedReviews = await getReportedReviews();
 
     const headerContent = (
