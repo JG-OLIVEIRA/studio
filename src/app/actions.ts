@@ -62,15 +62,15 @@ export async function getAllTeachers() {
 /**
  * Server action to approve a reported review, potentially deleting it.
  */
-export async function approveReportedReview(reviewId: number, userEmail: string) {
-    await DataService.approveReport(reviewId, userEmail);
+export async function approveReportedReview(reviewId: number, studentId: string) {
+    await DataService.approveReport(reviewId, studentId);
     revalidatePath('/moderation');
 }
 
 /**
  * Server action to reject a reported review, marking it as safe.
  */
-export async function rejectReportedReview(reviewId: number, userEmail: string) {
-    await DataService.rejectReport(reviewId, userEmail);
+export async function rejectReportedReview(reviewId: number, studentId: string) {
+    await DataService.rejectReport(reviewId, studentId);
     revalidatePath('/moderation');
 }

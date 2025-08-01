@@ -65,9 +65,9 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
     startTransition(async () => {
       try {
         if (action === 'approve') {
-          await approveReportedReview(reviewId, userInfo.email);
+          await approveReportedReview(reviewId, userInfo.studentId);
         } else {
-          await rejectReportedReview(reviewId, userInfo.email);
+          await rejectReportedReview(reviewId, userInfo.studentId);
         }
         
         setReviews(prev => prev.filter(r => r.id !== reviewId));

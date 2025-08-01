@@ -31,10 +31,10 @@ export async function initializeDatabase(): Promise<void> {
         await client.query(`
             CREATE TABLE IF NOT EXISTS moderation_votes (
                 id SERIAL PRIMARY KEY,
-                user_email VARCHAR(255) NOT NULL,
+                student_id VARCHAR(255) NOT NULL,
                 review_id INTEGER NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
                 created_at TIMESTAMPTZ DEFAULT NOW(),
-                UNIQUE(user_email, review_id)
+                UNIQUE(student_id, review_id)
             );
         `);
         
@@ -400,15 +400,15 @@ export async function getReportedReviews(): Promise<Review[]> {
     }
 }
 
-export async function approveReport(reviewId: number, userEmail: string): Promise<void> {
+export async function approveReport(reviewId: number, studentId: string): Promise<void> {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
         // Check if user already voted
         const existingVote = await client.query(
-            'SELECT id FROM moderation_votes WHERE user_email = $1 AND review_id = $2',
-            [userEmail, reviewId]
+            'SELECT id FROM moderation_votes WHERE student_id = $1 AND review_id = $2',
+            [studentId, reviewId]
         );
 
         if (existingVote.rowCount > 0) {
@@ -417,8 +417,8 @@ export async function approveReport(reviewId: number, userEmail: string): Promis
         
         // Register the vote
         await client.query(
-            'INSERT INTO moderation_votes (user_email, review_id) VALUES ($1, $2)',
-            [userEmail, reviewId]
+            'INSERT INTO moderation_votes (student_id, review_id) VALUES ($1, $2)',
+            [studentId, reviewId]
         );
 
         const updateResult = await client.query(
@@ -448,15 +448,15 @@ export async function approveReport(reviewId: number, userEmail: string): Promis
     }
 }
 
-export async function rejectReport(reviewId: number, userEmail: string): Promise<void> {
+export async function rejectReport(reviewId: number, studentId: string): Promise<void> {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
         // Check if user already voted
         const existingVote = await client.query(
-            'SELECT id FROM moderation_votes WHERE user_email = $1 AND review_id = $2',
-            [userEmail, reviewId]
+            'SELECT id FROM moderation_votes WHERE student_id = $1 AND review_id = $2',
+            [studentId, reviewId]
         );
 
         if (existingVote.rowCount > 0) {
@@ -465,8 +465,8 @@ export async function rejectReport(reviewId: number, userEmail: string): Promise
 
         // Register the vote
         await client.query(
-            'INSERT INTO moderation_votes (user_email, review_id) VALUES ($1, $2)',
-            [userEmail, reviewId]
+            'INSERT INTO moderation_votes (student_id, review_id) VALUES ($1, $2)',
+            [studentId, reviewId]
         );
 
         await client.query(
