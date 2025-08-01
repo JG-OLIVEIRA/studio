@@ -6,11 +6,17 @@ import { useFormStatus } from 'react-dom';
 import { login } from './actions';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, LogIn } from 'lucide-react';
+import { AlertCircle, LogIn, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useState } from 'react';
 
 export function LoginForm() {
   const [state, action] = useActionState(login, undefined);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+  };
 
   const formAction = (formData: FormData) => {
     const password = formData.get('password') as string;
@@ -33,13 +39,21 @@ export function LoginForm() {
             </label>
             <div className="relative">
               <Input
-                className="peer block w-full rounded-md border border-gray-700 bg-gray-900 py-[9px] pl-4 text-sm text-white outline-none placeholder:text-gray-500"
+                className="peer block w-full rounded-md border border-gray-700 bg-gray-900 py-[9px] pl-4 pr-10 text-sm text-white outline-none placeholder:text-gray-500"
                 id="password"
-                type="password"
+                type={isPasswordVisible ? 'text' : 'password'}
                 name="password"
                 placeholder="Digite a senha de admin"
                 required
               />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-200"
+                aria-label={isPasswordVisible ? "Esconder senha" : "Mostrar senha"}
+              >
+                {isPasswordVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
             </div>
           </div>
         </div>
