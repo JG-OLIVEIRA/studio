@@ -55,17 +55,6 @@ export async function initializeDatabase(): Promise<void> {
             );
         `);
         
-        // Criar tabela de votos de moderação
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS moderation_votes (
-                id SERIAL PRIMARY KEY,
-                student_id VARCHAR(255) NOT NULL,
-                review_id INTEGER NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
-                created_at TIMESTAMPTZ DEFAULT NOW(),
-                UNIQUE(student_id, review_id)
-            );
-        `);
-        
         await client.query('COMMIT');
         
         console.log("Banco de dados inicializado com sucesso.");
@@ -428,26 +417,10 @@ export async function getReportedReviews(): Promise<Review[]> {
     }
 }
 
-export async function approveReport(reviewId: number, studentId: string): Promise<void> {
+export async function approveReport(reviewId: number): Promise<void> {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-
-        // Check if user already voted
-        const existingVote = await client.query(
-            'SELECT id FROM moderation_votes WHERE student_id = $1 AND review_id = $2',
-            [studentId, reviewId]
-        );
-
-        if (existingVote.rows.length > 0) {
-            throw new Error('Você já votou nesta avaliação.');
-        }
-        
-        // Register the vote
-        await client.query(
-            'INSERT INTO moderation_votes (student_id, review_id) VALUES ($1, $2)',
-            [studentId, reviewId]
-        );
 
         const updateResult = await client.query(
             'UPDATE reviews SET report_count = report_count + 1 WHERE id = $1 RETURNING report_count',
@@ -467,52 +440,9 @@ export async function approveReport(reviewId: number, studentId: string): Promis
     } catch (error) {
         await client.query('ROLLBACK');
         console.error("Erro ao aprovar denúncia:", error);
-        if (error instanceof Error && error.message.includes('Você já votou')) {
-            throw error;
-        }
         throw new Error('Falha ao aprovar denúncia.');
     } finally {
         client.release();
     }
 }
-
-export async function rejectReport(reviewId: number, studentId: string): Promise<void> {
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-
-        // Check if user already voted
-        const existingVote = await client.query(
-            'SELECT id FROM moderation_votes WHERE student_id = $1 AND review_id = $2',
-            [studentId, reviewId]
-        );
-
-        if (existingVote.rows.length > 0) {
-            throw new Error('Você já votou nesta avaliação.');
-        }
-
-        // Register the vote
-        await client.query(
-            'INSERT INTO moderation_votes (student_id, review_id) VALUES ($1, $2)',
-            [studentId, reviewId]
-        );
-
-        await client.query(
-            'UPDATE reviews SET reported = false, report_count = 0 WHERE id = $1',
-            [reviewId]
-        );
-
-        await client.query('COMMIT');
-    } catch (error) {
-        await client.query('ROLLBACK');
-        console.error("Erro ao rejeitar denúncia:", error);
-        if (error instanceof Error && error.message.includes('Você já votou')) {
-            throw error;
-        }
-        throw new Error('Falha ao rejeitar denúncia.');
-    } finally {
-        client.release();
-    }
-}
-
     

@@ -1,17 +1,12 @@
 
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState, useTransition } from 'react';
 import type { Review } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { ThumbsUp, ThumbsDown, User, Tag, Calendar, Quote, ShieldAlert, LogIn } from 'lucide-react';
-import { approveReportedReview, rejectReportedReview } from '@/app/actions';
+import { User, Tag, Calendar, Quote, ShieldAlert, ThumbsUp } from 'lucide-react';
+import { approveReportedReview } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from './ui/badge';
 import StarRating from './star-rating';
@@ -21,56 +16,50 @@ interface ModerationClientProps {
 }
 
 const APPROVAL_THRESHOLD = 5;
-const USER_INFO_KEY = 'moderationUserInfo';
-
-const loginSchema = z.object({
-    email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
-    studentId: z.string().regex(/^\d{12}$/, { message: "A matrícula deve conter 12 dígitos." })
-        .refine(val => {
-            const currentYear = new Date().getFullYear();
-            const startYear = parseInt(val.substring(0, 4), 10);
-            return startYear > 2000 && startYear <= currentYear;
-        }, { message: "Ano de matrícula inválido." }),
-});
-
-type LoginValues = z.infer<typeof loginSchema>;
+const VOTED_REVIEWS_KEY = 'votedReviews';
 
 export default function ModerationClient({ initialReviews }: ModerationClientProps) {
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
-  const [userInfo, setUserInfo] = useState<{email: string, studentId: string} | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  useEffect(() => {
+  const getVotedReviews = (): number[] => {
     try {
-      const storedUserInfo = localStorage.getItem(USER_INFO_KEY);
-      if (storedUserInfo) {
-        setUserInfo(JSON.parse(storedUserInfo));
-      }
+      const voted = localStorage.getItem(VOTED_REVIEWS_KEY);
+      return voted ? JSON.parse(voted) : [];
     } catch (error) {
-        console.error("Failed to load user info from localStorage", error);
+      console.error("Failed to parse voted reviews from localStorage", error);
+      return [];
     }
-  }, []);
+  };
 
-  const handleVote = (reviewId: number, action: 'approve' | 'reject') => {
-    if (!userInfo) {
-        toast({
-            variant: "destructive",
-            title: "Identificação necessária",
-            description: "Você precisa se identificar para votar.",
-        });
-        return;
+  const addVotedReview = (reviewId: number) => {
+    try {
+      const voted = getVotedReviews();
+      localStorage.setItem(VOTED_REVIEWS_KEY, JSON.stringify([...voted, reviewId]));
+    } catch (error) {
+      console.error("Failed to save voted review to localStorage", error);
+    }
+  };
+
+  const handleRemoveVote = (reviewId: number) => {
+    const previouslyVoted = getVotedReviews().includes(reviewId);
+    if (previouslyVoted) {
+      toast({
+        variant: 'destructive',
+        title: 'Voto já registrado',
+        description: 'Você já participou da moderação desta avaliação nesta sessão.',
+      });
+      return;
     }
 
     startTransition(async () => {
       try {
-        if (action === 'approve') {
-          await approveReportedReview(reviewId, userInfo.studentId);
-        } else {
-          await rejectReportedReview(reviewId, userInfo.studentId);
-        }
+        await approveReportedReview(reviewId);
         
+        addVotedReview(reviewId);
         setReviews(prev => prev.filter(r => r.id !== reviewId));
+
         toast({
           title: 'Voto registrado!',
           description: `Obrigado por ajudar a moderar a comunidade.`,
@@ -87,20 +76,6 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
     });
   };
 
-  const form = useForm<LoginValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', studentId: '' },
-  });
-
-  const handleLogin = (values: LoginValues) => {
-    setUserInfo(values);
-    try {
-      localStorage.setItem(USER_INFO_KEY, JSON.stringify(values));
-    } catch (error) {
-      console.error("Failed to save user info to localStorage", error);
-    }
-  };
-
   const formatDate = (dateString: string) => {
     try {
         const date = new Date(dateString);
@@ -109,51 +84,6 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
     } catch (e) {
         return "Data inválida";
     }
-  }
-
-  if (!userInfo) {
-    return (
-        <Card className="max-w-lg mx-auto bg-card/50">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <LogIn/>
-                    Identificação Necessária
-                </CardTitle>
-                <CardDescription>
-                    Para garantir a integridade da moderação, por favor, informe seu e-mail e matrícula. Seus dados não serão exibidos publicamente.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>E-mail</FormLabel>
-                                    <FormControl><Input placeholder="seu.email@exemplo.com" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="studentId"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Matrícula</FormLabel>
-                                    <FormControl><Input placeholder="Ex: 202410123456" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <Button type="submit" className="w-full">Entrar na Moderação</Button>
-                    </form>
-                </Form>
-            </CardContent>
-        </Card>
-    );
   }
 
   if (reviews.length === 0) {
@@ -196,11 +126,7 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
              </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => handleVote(review.id, 'reject')} disabled={isPending}>
-              <ThumbsDown className="mr-2" />
-              Manter Avaliação
-            </Button>
-            <Button variant="destructive" onClick={() => handleVote(review.id, 'approve')} disabled={isPending}>
+            <Button variant="destructive" onClick={() => handleRemoveVote(review.id)} disabled={isPending}>
               <ThumbsUp className="mr-2" />
               Remover Avaliação
             </Button>
