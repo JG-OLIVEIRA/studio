@@ -36,8 +36,6 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
     onChange(selected.filter((i) => i !== item))
   }
 
-  const selectedLabels = selected.map(val => options.find(opt => opt.value === val)?.label ?? val);
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -45,34 +43,32 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between", className)} // Removido h-auto
+          className={cn("w-full justify-between h-auto", className)}
           onClick={() => setOpen(!open)}
         >
-          <div className="flex-1 flex gap-1 items-center overflow-hidden">
-            {selected.length > 0 ? (
-                <>
-                    <Badge
-                        variant="secondary"
-                        className="whitespace-nowrap"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleUnselect(selected[0]);
-                        }}
-                    >
-                        {selectedLabels[0]}
-                        <X className="ml-1 h-3 w-3" />
-                    </Badge>
-                    {selected.length > 1 && (
-                        <span className="text-muted-foreground text-xs whitespace-nowrap">
-                           + {selected.length - 1} {selected.length -1 === 1 ? 'outro' : 'outros'}
-                        </span>
-                    )}
-                </>
-            ) : (
-                <span className="text-muted-foreground">{placeholder}</span>
-            )}
-          </div>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
+            <div className="flex gap-1 flex-wrap">
+                {selected.length > 0 ? (
+                    selected.map((item) => {
+                        const label = options.find((option) => option.value === item)?.label ?? item;
+                        return (
+                            <Badge
+                                key={item}
+                                variant="secondary"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUnselect(item);
+                                }}
+                            >
+                                {label}
+                                <X className="ml-1 h-3 w-3" />
+                            </Badge>
+                        )
+                    })
+                ) : (
+                    <span className="text-muted-foreground">{placeholder}</span>
+                )}
+            </div>
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
