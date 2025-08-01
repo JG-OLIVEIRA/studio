@@ -86,7 +86,7 @@ export async function login(password: string) {
  * Server action for admin logout.
  */
 export async function logout() {
-    cookies().set('admin-auth', '', { expires: new Date(0) });
+    cookies().set('admin-auth', '', { expires: new Date(0), path: '/' });
     redirect('/admin/login');
 }
 
