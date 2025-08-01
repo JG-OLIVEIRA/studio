@@ -248,7 +248,7 @@ export async function addTeacherOrReview(data: {
                     [teacherId, subjectId, data.reviewText]
                 );
 
-                if (duplicateCheck.rowCount > 0) {
+                if (duplicateCheck.rowCount && duplicateCheck.rowCount > 0) {
                     // Throw an error that will be caught and shown to the user
                     throw new Error(`Uma avaliação idêntica para o professor ${data.teacherName} na matéria ${subjectName} já foi enviada.`);
                 }
