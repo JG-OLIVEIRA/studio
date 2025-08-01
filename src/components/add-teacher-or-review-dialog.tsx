@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, type ReactNode, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,7 +24,7 @@ import {
     DialogTrigger
   } from './ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Star, PlusCircle, ShieldAlert, Flag } from 'lucide-react';
+import { Star, PlusCircle, ShieldAlert, Loader2, TriangleAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Combobox } from './ui/combobox';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +32,7 @@ import { ScrollArea } from './ui/scroll-area';
 import type { Teacher } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { MultiSelect } from './ui/multi-select';
+import { checkReviewRealtime } from '@/app/actions';
 
 const formSchema = z.object({
   teacherName: z.string().trim()
@@ -51,6 +52,22 @@ interface AddTeacherOrReviewDialogProps {
     onSubmit: (data: Omit<FormValues, 'reviewAuthor'>) => Promise<void>;
 }
 
+// Debounce function
+function debounce<F extends (...args: any[]) => any>(func: F, waitFor: number) {
+    let timeout: NodeJS.Timeout | null = null;
+  
+    const debounced = (...args: Parameters<F>) => {
+      if (timeout !== null) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+      timeout = setTimeout(() => func(...args), waitFor);
+    };
+  
+    return debounced as (...args: Parameters<F>) => void;
+}
+
+
 export function AddTeacherOrReviewDialog({ 
     allSubjectNames,
     allTeachers,
@@ -58,6 +75,8 @@ export function AddTeacherOrReviewDialog({
 }: AddTeacherOrReviewDialogProps) {
   const [open, setOpen] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
+  const [moderationResult, setModerationResult] = useState<{ isProblematic: boolean; reason?: string } | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
@@ -71,6 +90,8 @@ export function AddTeacherOrReviewDialog({
   });
   
   const selectedTeacherName = form.watch('teacherName');
+  const reviewTextValue = form.watch('reviewText');
+
   const selectedTeacher = useMemo(() => {
     return allTeachers.find(t => t.name === selectedTeacherName);
   }, [selectedTeacherName, allTeachers]);
@@ -113,8 +134,44 @@ export function AddTeacherOrReviewDialog({
     }
   }, [selectedTeacher, form]);
 
+  const debouncedCheck = useCallback(
+    debounce(async (text: string) => {
+      if (!text.trim()) {
+        setModerationResult(null);
+        setIsChecking(false);
+        return;
+      }
+      try {
+        const result = await checkReviewRealtime(text);
+        setModerationResult(result);
+      } catch (error) {
+        // Silently fail or show a subtle indicator
+        console.error("Real-time moderation failed:", error);
+        setModerationResult(null); // Clear previous errors
+      } finally {
+        setIsChecking(false);
+      }
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    if (reviewTextValue !== undefined) {
+      setIsChecking(true);
+      debouncedCheck(reviewTextValue);
+    }
+  }, [reviewTextValue, debouncedCheck]);
 
   const handleSubmit = async (values: FormValues) => {
+    if (moderationResult?.isProblematic) {
+        toast({
+            variant: "destructive",
+            title: "Revisão Necessária",
+            description: "Por favor, ajuste o texto da sua avaliação para que ela esteja de acordo com as diretrizes.",
+        });
+        return;
+    }
+
     try {
         await onSubmit({
             ...values,
@@ -140,9 +197,13 @@ export function AddTeacherOrReviewDialog({
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
         form.reset();
+        setModerationResult(null);
+        setIsChecking(false);
     }
     setOpen(isOpen);
   }
+
+  const isSubmitDisabled = form.formState.isSubmitting || !!moderationResult?.isProblematic;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -207,13 +268,23 @@ export function AddTeacherOrReviewDialog({
                             name="reviewText"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Avaliação Escrita (Opcional)</FormLabel>
+                                <div className="flex items-center justify-between">
+                                  <FormLabel>Avaliação Escrita (Opcional)</FormLabel>
+                                  {isChecking && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                                </div>
                                 <FormControl>
                                     <Textarea
-                                    placeholder="Compartilhe sua experiência com este professor..."
-                                    {...field}
+                                        placeholder="Compartilhe sua experiência com este professor..."
+                                        {...field}
+                                        className={cn(moderationResult?.isProblematic && "border-destructive focus-visible:ring-destructive")}
                                     />
                                 </FormControl>
+                                 {moderationResult?.isProblematic && (
+                                    <FormDescription className="text-destructive flex items-center gap-2 text-xs">
+                                        <TriangleAlert className="h-4 w-4" />
+                                        {moderationResult.reason}
+                                    </FormDescription>
+                                 )}
                                 <FormMessage />
                                 </FormItem>
                             )}
@@ -259,14 +330,14 @@ export function AddTeacherOrReviewDialog({
                             <ShieldAlert className="h-4 w-4 !text-destructive" />
                             <AlertTitle className="font-semibold !text-destructive">Aviso</AlertTitle>
                             <AlertDescription className="!text-destructive/80">
-                                Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas serão removidas pela moderação de IA.
+                                Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas serão removidas.
                             </AlertDescription>
                         </Alert>
 
 
                         <div className="flex justify-end gap-2 pt-4">
                             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                            <Button type="submit" disabled={form.formState.isSubmitting}>
+                            <Button type="submit" disabled={isSubmitDisabled}>
                                 {form.formState.isSubmitting ? "Enviando..." : "Enviar Avaliação"}
                             </Button>
                         </div>
