@@ -1,28 +1,34 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getReportedReviews } from "@/lib/data-service";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, Bot } from "lucide-react";
 import ReportedReviewsClient from "./reported-reviews-client";
+import AIModerationClient from "./ai-moderation-client";
 
 export default async function AdminDashboardPage() {
     const reportedReviews = await getReportedReviews();
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <ShieldAlert className="h-6 w-6 text-destructive" />
-                        Moderação de Conteúdo
-                    </CardTitle>
-                    <CardDescription>
-                        Abaixo estão as avaliações que foram denunciadas pelos usuários. Revise o conteúdo e decida se a avaliação deve ser mantida (Aprovar) ou removida (Deletar).
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+        <div className="flex-1 p-4 md:p-8">
+            <h1 className="text-2xl font-bold mb-6">Painel de Administração</h1>
+            <Tabs defaultValue="user_reports" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 max-w-md">
+                    <TabsTrigger value="user_reports" className="gap-2">
+                        <ShieldAlert className="h-4 w-4" />
+                        Denúncias de Usuários ({reportedReviews.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="ai_moderation" className="gap-2">
+                        <Bot className="h-4 w-4" />
+                        Moderação por IA
+                    </TabsTrigger>
+                </TabsList>
+                <TabsContent value="user_reports" className="mt-6">
                     <ReportedReviewsClient initialReviews={reportedReviews} />
-                </CardContent>
-            </Card>
+                </TabsContent>
+                <TabsContent value="ai_moderation" className="mt-6">
+                    <AIModerationClient />
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }
