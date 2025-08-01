@@ -66,7 +66,7 @@ export async function initializeDatabase() {
             await client.query(`
                 CREATE TABLE IF NOT EXISTS reviews (
                     id SERIAL PRIMARY KEY,
-                    text TEXT NOT NULL,
+                    text TEXT,
                     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
                     teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
                     subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
@@ -74,6 +74,13 @@ export async function initializeDatabase() {
                     downvotes INTEGER NOT NULL DEFAULT 0,
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
                 );
+            `);
+            
+            // Allow 'text' column to be NULL, but default to empty string.
+            await client.query(`
+                ALTER TABLE reviews 
+                ALTER COLUMN text SET DEFAULT '',
+                ALTER COLUMN text SET NOT NULL;
             `);
 
             // Add 'reported' column to reviews table if it doesn't exist
@@ -227,10 +234,12 @@ export async function addTeacherOrReview(data: {
   reviewText: string;
   reviewRating: number;
 }): Promise<void> {
-    // 1. Moderate the review text before anything else
-    const moderationResult = await moderateReviewFlow({ reviewText: data.reviewText });
-    if (moderationResult.isProblematic) {
-        throw new Error(moderationResult.reason || "A avaliação foi considerada inadequada e não pode ser publicada.");
+    // 1. Moderate the review text before anything else, if text is provided.
+    if(data.reviewText.trim()) {
+        const moderationResult = await moderateReviewFlow({ reviewText: data.reviewText });
+        if (moderationResult.isProblematic) {
+            throw new Error(moderationResult.reason || "A avaliação foi considerada inadequada e não pode ser publicada.");
+        }
     }
     
     const client = await pool.connect();
@@ -256,20 +265,22 @@ export async function addTeacherOrReview(data: {
             }
             const subjectId = subjectResult.rows[0].id;
 
-            // Anti-spam: Check for an identical review
-            const duplicateCheck = await client.query(
-                'SELECT id FROM reviews WHERE teacher_id = $1 AND subject_id = $2 AND text = $3',
-                [teacherId, subjectId, data.reviewText]
-            );
+            // Anti-spam: Check for an identical review if text is provided.
+             if(data.reviewText.trim()) {
+                const duplicateCheck = await client.query(
+                    'SELECT id FROM reviews WHERE teacher_id = $1 AND subject_id = $2 AND text = $3',
+                    [teacherId, subjectId, data.reviewText]
+                );
 
-            if (duplicateCheck.rowCount > 0) {
-                 // Throw an error that will be caught and shown to the user
-                throw new Error(`Uma avaliação idêntica para o professor ${data.teacherName} na matéria ${subjectName} já foi enviada.`);
+                if (duplicateCheck.rowCount > 0) {
+                    // Throw an error that will be caught and shown to the user
+                    throw new Error(`Uma avaliação idêntica para o professor ${data.teacherName} na matéria ${subjectName} já foi enviada.`);
+                }
             }
 
             await client.query(
                 'INSERT INTO reviews (text, rating, teacher_id, subject_id, created_at) VALUES ($1, $2, $3, $4, NOW())',
-                [data.reviewText, data.reviewRating, teacherId, subjectId]
+                [data.reviewText || '', data.reviewRating, teacherId, subjectId]
             );
         }
 

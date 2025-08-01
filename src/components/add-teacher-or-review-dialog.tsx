@@ -38,8 +38,8 @@ const formSchema = z.object({
     .min(3, "O nome do professor deve ter pelo menos 3 caracteres."),
   subjectNames: z.array(z.string()).nonempty("É necessário selecionar pelo menos uma matéria."),
   reviewText: z.string().trim()
-    .min(25, "A avaliação deve ter pelo menos 25 caracteres.")
-    .max(1000, "A avaliação deve ter no máximo 1000 caracteres."),
+    .max(1000, "A avaliação deve ter no máximo 1000 caracteres.")
+    .optional(),
   reviewRating: z.number().min(1, "A nota é obrigatória.").max(5),
 });
 
@@ -116,7 +116,10 @@ export function AddTeacherOrReviewDialog({
 
   const handleSubmit = async (values: FormValues) => {
     try {
-        await onSubmit(values);
+        await onSubmit({
+            ...values,
+            reviewText: values.reviewText || '', // Garante que o valor seja uma string vazia se for undefined
+        });
         toast({
             title: "Avaliação enviada!",
             description: "Obrigado por contribuir com a comunidade.",
@@ -204,7 +207,7 @@ export function AddTeacherOrReviewDialog({
                             name="reviewText"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Avaliação Escrita</FormLabel>
+                                <FormLabel>Avaliação Escrita (Opcional)</FormLabel>
                                 <FormControl>
                                     <Textarea
                                     placeholder="Compartilhe sua experiência com este professor..."
