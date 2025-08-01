@@ -3,8 +3,6 @@
 
 import * as DataService from '@/lib/data-service';
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 /**
  * Server action to handle form submission for adding a teacher or review.
@@ -48,61 +46,8 @@ export async function downvoteReview(reviewId: number) {
 }
 
 /**
- * Server action to report a review.
- */
-export async function reportReview(reviewId: number) {
-    await DataService.reportReview(reviewId);
-    revalidatePath('/');
-    revalidatePath('/subjects');
-}
-
-/**
  * Server action to fetch all teachers.
  */
 export async function getAllTeachers() {
     return DataService.getAllTeachers();
-}
-
-
-// Admin actions
-
-/**
- * Server action for admin login.
- */
-export async function login(password: string) {
-    if (password === process.env.ADMIN_SECRET) {
-      (await cookies()).set('admin-auth', 'true', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 24, // 24 hours
-        path: '/',
-      });
-      return { success: true };
-    }
-    return { success: false, error: 'Senha incorreta.' };
-}
-
-/**
- * Server action for admin logout.
- */
-export async function logout() {
-    (await cookies()).set('admin-auth', '', { expires: new Date(0), path: '/' });
-    redirect('/admin/login');
-}
-
-
-/**
- * Server action to approve a reported review.
- */
-export async function approveReviewAction(reviewId: number) {
-    await DataService.approveReview(reviewId);
-    revalidatePath('/admin/dashboard');
-}
-
-/**
- * Server action to delete a reported review.
- */
-export async function deleteReviewAction(reviewId: number) {
-    await DataService.deleteReview(reviewId);
-    revalidatePath('/admin/dashboard');
 }

@@ -72,7 +72,8 @@ export async function initializeDatabase() {
                     subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
                     upvotes INTEGER NOT NULL DEFAULT 0,
                     downvotes INTEGER NOT NULL DEFAULT 0,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+                    reported BOOLEAN NOT NULL DEFAULT false
                 );
             `);
             
@@ -82,19 +83,6 @@ export async function initializeDatabase() {
                 ALTER COLUMN text SET DEFAULT '',
                 ALTER COLUMN text SET NOT NULL;
             `);
-
-            // Add 'reported' column to reviews table if it doesn't exist
-            const reportedColumnExists = await client.query(`
-                SELECT 1 FROM information_schema.columns 
-                WHERE table_name='reviews' AND column_name='reported';
-            `);
-            if (reportedColumnExists.rowCount === 0) {
-                await client.query(`
-                    ALTER TABLE reviews 
-                    ADD COLUMN reported BOOLEAN NOT NULL DEFAULT false;
-                `);
-                console.log("Coluna 'reported' adicionada à tabela 'reviews'.");
-            }
             
             const dbSubjectsResult = await client.query('SELECT name FROM subjects');
             const dbSubjectNames = dbSubjectsResult.rows.map(s => s.name);
@@ -138,7 +126,6 @@ export async function getSubjects(): Promise<Subject[]> {
                 tr.rating as review_rating,
                 tr.upvotes as review_upvotes,
                 tr.downvotes as review_downvotes,
-                tr.reported as review_reported,
                 tr.created_at as review_created_at
             FROM subjects s
             LEFT JOIN (
@@ -148,7 +135,6 @@ export async function getSubjects(): Promise<Subject[]> {
                     reviews.rating,
                     reviews.upvotes, 
                     reviews.downvotes,
-                    reviews.reported,
                     reviews.created_at,
                     reviews.teacher_id, 
                     reviews.subject_id
@@ -204,7 +190,6 @@ export async function getSubjects(): Promise<Subject[]> {
                         rating: row.review_rating,
                         upvotes: row.review_upvotes,
                         downvotes: row.review_downvotes,
-                        reported: row.review_reported,
                         createdAt: (row.review_created_at || new Date()).toISOString(),
                     });
                 }
@@ -322,18 +307,6 @@ export async function downvoteReview(reviewId: number): Promise<void> {
     }
 }
 
-export async function reportReview(reviewId: number): Promise<void> {
-    const client = await pool.connect();
-    try {
-        await client.query('UPDATE reviews SET reported = true WHERE id = $1', [reviewId]);
-    } catch (error) {
-        console.error("Erro ao denunciar avaliação:", error);
-        throw new Error("Falha ao registrar a denúncia.");
-    } finally {
-        client.release();
-    }
-}
-
 export async function getAllTeachers(): Promise<{ id: number; name: string }[]> {
     await initializeDatabase();
     const client = await pool.connect();
@@ -376,7 +349,6 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                 r.rating as review_rating,
                 r.upvotes as review_upvotes,
                 r.downvotes as review_downvotes,
-                r.reported as review_reported,
                 r.created_at as review_created_at,
                 s.name as subject_name
             FROM reviews r
@@ -398,7 +370,6 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                         rating: row.review_rating,
                         upvotes: row.review_upvotes,
                         downvotes: row.review_downvotes,
-                        reported: row.review_reported,
                         createdAt: (row.created_at || new Date()).toISOString(),
                     });
                 }
@@ -419,184 +390,6 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
     } catch (error) {
         console.error("Erro ao buscar professores com estatísticas globais:", error);
         return [];
-    } finally {
-        client.release();
-    }
-}
-
-// Admin Data Service Functions
-
-export async function getReportedReviews(): Promise<(Review & { teacherName: string, subjectName: string })[]> {
-    await initializeDatabase();
-    const client = await pool.connect();
-    try {
-        const query = `
-            SELECT 
-                r.id,
-                r.text,
-                r.rating,
-                r.upvotes,
-                r.downvotes,
-                r.reported,
-                r.created_at,
-                t.name as teacher_name,
-                s.name as subject_name
-            FROM reviews r
-            JOIN teachers t ON r.teacher_id = t.id
-            JOIN subjects s ON r.subject_id = s.id
-            WHERE r.reported = true
-            ORDER BY r.created_at DESC;
-        `;
-        const result = await client.query(query);
-        return result.rows.map(row => ({
-            id: row.id,
-            text: row.text,
-            rating: row.rating,
-            upvotes: row.upvotes,
-            downvotes: row.downvotes,
-            reported: row.reported,
-            createdAt: (row.created_at || new Date()).toISOString(),
-            teacherName: row.teacher_name,
-            subjectName: row.subject_name
-        }));
-    } catch (error) {
-        console.error("Erro ao buscar avaliações denunciadas:", error);
-        throw new Error("Falha ao buscar dados de moderação.");
-    } finally {
-        client.release();
-    }
-}
-
-export async function getAllReviewsForModeration(): Promise<(Review & { teacherName: string; subjectName: string; })[]> {
-    await initializeDatabase();
-    const client = await pool.connect();
-    try {
-        const query = `
-            SELECT 
-                r.id,
-                r.text,
-                r.rating,
-                r.upvotes,
-                r.downvotes,
-                r.reported,
-                r.created_at,
-                t.name as teacher_name,
-                s.name as subject_name
-            FROM reviews r
-            JOIN teachers t ON r.teacher_id = t.id
-            JOIN subjects s ON r.subject_id = s.id;
-        `;
-         const result = await client.query(query);
-        return result.rows.map(row => ({
-            id: row.id,
-            text: row.text,
-            rating: row.rating,
-            upvotes: row.upvotes,
-            downvotes: row.downvotes,
-            reported: row.reported,
-            createdAt: (row.created_at || new Date()).toISOString(),
-            teacherName: row.teacher_name,
-            subjectName: row.subject_name
-        }));
-    } catch (error) {
-        console.error("Erro ao buscar todas as avaliações para moderação:", error);
-        throw new Error("Falha ao buscar dados para moderação de IA.");
-    } finally {
-        client.release();
-    }
-}
-
-export async function approveReview(reviewId: number): Promise<void> {
-    const client = await pool.connect();
-    try {
-        await client.query('UPDATE reviews SET reported = false WHERE id = $1', [reviewId]);
-    } catch (error) {
-        console.error("Erro ao aprovar avaliação:", error);
-        throw new Error("Falha ao aprovar a avaliação no banco de dados.");
-    } finally {
-        client.release();
-    }
-}
-
-export async function deleteReview(reviewId: number): Promise<void> {
-    const client = await pool.connect();
-    try {
-        await client.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
-    } catch (error) {
-        console.error("Erro ao deletar avaliação:", error);
-        throw new Error("Falha ao deletar a avaliação no banco de dados.");
-    } finally {
-        client.release();
-    }
-}
-
-
-export async function getDashboardStats() {
-    await initializeDatabase();
-    const client = await pool.connect();
-    try {
-        const teachersQuery = client.query('SELECT COUNT(*) FROM teachers;');
-        const reviewsQuery = client.query('SELECT COUNT(*) FROM reviews;');
-        const subjectsQuery = client.query('SELECT COUNT(*) FROM subjects;');
-        const reportedQuery = client.query('SELECT COUNT(*) FROM reviews WHERE reported = true;');
-        
-        const [teachersResult, reviewsResult, subjectsResult, reportedResult] = await Promise.all([
-            teachersQuery,
-            reviewsQuery,
-            subjectsQuery,
-            reportedQuery
-        ]);
-
-        return {
-            totalTeachers: parseInt(teachersResult.rows[0].count, 10),
-            totalReviews: parseInt(reviewsResult.rows[0].count, 10),
-            totalSubjects: parseInt(subjectsResult.rows[0].count, 10),
-            reportedReviews: parseInt(reportedResult.rows[0].count, 10)
-        };
-    } catch (error) {
-        console.error("Erro ao buscar estatísticas do dashboard:", error);
-        throw new Error("Falha ao buscar os dados do dashboard.");
-    } finally {
-        client.release();
-    }
-}
-
-export async function getRecentReviews(limit = 5): Promise<(Review & { teacherName: string, subjectName: string })[]> {
-     await initializeDatabase();
-    const client = await pool.connect();
-    try {
-        const query = `
-            SELECT 
-                r.id,
-                r.text,
-                r.rating,
-                r.upvotes,
-                r.downvotes,
-                r.reported,
-                r.created_at,
-                t.name as teacher_name,
-                s.name as subject_name
-            FROM reviews r
-            JOIN teachers t ON r.teacher_id = t.id
-            JOIN subjects s ON r.subject_id = s.id
-            ORDER BY r.created_at DESC
-            LIMIT $1;
-        `;
-        const result = await client.query(query, [limit]);
-        return result.rows.map(row => ({
-            id: row.id,
-            text: row.text,
-            rating: row.rating,
-            upvotes: row.upvotes,
-            downvotes: row.downvotes,
-            reported: row.reported,
-            createdAt: (row.created_at || new Date()).toISOString(),
-            teacherName: row.teacher_name,
-            subjectName: row.subject_name
-        }));
-    } catch (error) {
-        console.error("Erro ao buscar avaliações recentes:", error);
-        throw new Error("Falha ao buscar as avaliações mais recentes.");
     } finally {
         client.release();
     }

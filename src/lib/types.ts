@@ -7,7 +7,6 @@ export interface Review {
   text: string;
   upvotes: number;
   downvotes: number;
-  reported: boolean;
   createdAt: string;
 }
 
