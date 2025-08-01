@@ -13,6 +13,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import {
     Dialog,
@@ -23,7 +24,7 @@ import {
     DialogTrigger
   } from './ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Star, PlusCircle } from 'lucide-react';
+import { Star, PlusCircle, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Combobox } from './ui/combobox';
 import { useToast } from '@/hooks/use-toast';
