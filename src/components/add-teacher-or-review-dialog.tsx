@@ -259,10 +259,10 @@ export function AddTeacherOrReviewDialog({
                         </div>
                     </ScrollArea>
                     <div className="p-6 pt-4 border-t bg-background rounded-b-lg">
-                         <Alert variant="destructive" className="bg-destructive/10 text-destructive-foreground border-destructive/20 mb-4">
-                            <ShieldAlert className="h-4 w-4 !text-destructive" />
-                            <AlertTitle className="font-semibold !text-destructive">Aviso</AlertTitle>
-                            <AlertDescription className="!text-destructive/80">
+                         <Alert className="bg-primary/10 text-primary border-primary/20 mb-4">
+                            <ShieldAlert className="h-4 w-4 !text-primary" />
+                            <AlertTitle className="font-semibold !text-primary">Aviso</AlertTitle>
+                            <AlertDescription className="!text-primary/80">
                                 Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas serão removidas.
                             </AlertDescription>
                         </Alert>
