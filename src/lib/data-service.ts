@@ -37,90 +37,7 @@ const calculateAverageRating = (reviews: Review[]): number => {
 };
 
 
-let initializationPromise: Promise<void> | null = null;
-
-export async function initializeDatabase() {
-    if (initializationPromise) {
-        return initializationPromise;
-    }
-
-    initializationPromise = (async () => {
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
-            console.log("Iniciando verificação do banco de dados...");
-
-            await client.query(`
-                CREATE TABLE IF NOT EXISTS subjects (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) UNIQUE NOT NULL
-                );
-            `);
-            await client.query(`
-                CREATE TABLE IF NOT EXISTS teachers (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) UNIQUE NOT NULL
-                );
-            `);
-            await client.query(`
-                CREATE TABLE IF NOT EXISTS reviews (
-                    id SERIAL PRIMARY KEY,
-                    text TEXT,
-                    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-                    teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
-                    subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
-                    upvotes INTEGER NOT NULL DEFAULT 0,
-                    downvotes INTEGER NOT NULL DEFAULT 0,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-                    reported BOOLEAN NOT NULL DEFAULT false,
-                    report_count INTEGER NOT NULL DEFAULT 0
-                );
-            `);
-            
-            // Add report_count column if it doesn't exist (for backward compatibility)
-             try {
-                await client.query('ALTER TABLE reviews ADD COLUMN IF NOT EXISTS report_count INTEGER NOT NULL DEFAULT 0;');
-            } catch (e: any) {
-                // This might fail if the column type is different, but for this app's lifecycle it's safe.
-                console.warn("Could not add report_count column, it might already exist with a different type or other issue.", e.message);
-            }
-            
-            // Allow 'text' column to be NULL, but default to empty string.
-            await client.query(`
-                ALTER TABLE reviews 
-                ALTER COLUMN text SET DEFAULT '',
-                ALTER COLUMN text SET NOT NULL;
-            `);
-            
-            const dbSubjectsResult = await client.query('SELECT name FROM subjects');
-            const dbSubjectNames = dbSubjectsResult.rows.map(s => s.name);
-            const subjectsToAdd = curriculumSubjects.filter(cs => !dbSubjectNames.includes(cs));
-
-            if (subjectsToAdd.length > 0) {
-                const insertQuery = 'INSERT INTO subjects (name) VALUES ' + subjectsToAdd.map((_, i) => `($${i + 1})`).join(', ');
-                await client.query(insertQuery, subjectsToAdd);
-                console.log(`Adicionadas ${subjectsToAdd.length} novas matérias.`);
-            }
-
-            await client.query('COMMIT');
-            console.log("Banco de dados verificado com sucesso.");
-        } catch (error) {
-            await client.query('ROLLBACK');
-            console.error("Erro durante a inicialização do banco de dados:", error);
-            initializationPromise = null;
-            throw new Error("Não foi possível inicializar o banco de dados.");
-        } finally {
-            client.release();
-        }
-    })();
-
-    return initializationPromise;
-}
-
-
 export async function getSubjects(): Promise<Subject[]> {
-    await initializeDatabase();
-    
     const client = await pool.connect();
     try {
         const query = `
@@ -344,7 +261,6 @@ export async function reportReview(reviewId: number): Promise<void> {
 
 
 export async function getAllTeachers(): Promise<{ id: number; name: string }[]> {
-    await initializeDatabase();
     const client = await pool.connect();
     try {
         const result = await client.query('SELECT id, name FROM teachers ORDER BY name');
@@ -358,7 +274,6 @@ export async function getAllTeachers(): Promise<{ id: number; name: string }[]> 
 }
 
 export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
-    await initializeDatabase();
     const client = await pool.connect();
     try {
         // First, get all teachers to ensure everyone is listed, even those with no reviews yet.
