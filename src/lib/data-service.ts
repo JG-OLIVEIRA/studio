@@ -500,3 +500,75 @@ export async function deleteReview(reviewId: number): Promise<void> {
         client.release();
     }
 }
+
+
+export async function getDashboardStats() {
+    await initializeDatabase();
+    const client = await pool.connect();
+    try {
+        const teachersQuery = client.query('SELECT COUNT(*) FROM teachers;');
+        const reviewsQuery = client.query('SELECT COUNT(*) FROM reviews;');
+        const subjectsQuery = client.query('SELECT COUNT(*) FROM subjects;');
+        const reportedQuery = client.query('SELECT COUNT(*) FROM reviews WHERE reported = true;');
+        
+        const [teachersResult, reviewsResult, subjectsResult, reportedResult] = await Promise.all([
+            teachersQuery,
+            reviewsQuery,
+            subjectsQuery,
+            reportedQuery
+        ]);
+
+        return {
+            totalTeachers: parseInt(teachersResult.rows[0].count, 10),
+            totalReviews: parseInt(reviewsResult.rows[0].count, 10),
+            totalSubjects: parseInt(subjectsResult.rows[0].count, 10),
+            reportedReviews: parseInt(reportedResult.rows[0].count, 10)
+        };
+    } catch (error) {
+        console.error("Erro ao buscar estatísticas do dashboard:", error);
+        throw new Error("Falha ao buscar os dados do dashboard.");
+    } finally {
+        client.release();
+    }
+}
+
+export async function getRecentReviews(limit = 5): Promise<(Review & { teacherName: string, subjectName: string })[]> {
+     await initializeDatabase();
+    const client = await pool.connect();
+    try {
+        const query = `
+            SELECT 
+                r.id,
+                r.text,
+                r.rating,
+                r.upvotes,
+                r.downvotes,
+                r.reported,
+                r.created_at,
+                t.name as teacher_name,
+                s.name as subject_name
+            FROM reviews r
+            JOIN teachers t ON r.teacher_id = t.id
+            JOIN subjects s ON r.subject_id = s.id
+            ORDER BY r.created_at DESC
+            LIMIT $1;
+        `;
+        const result = await client.query(query, [limit]);
+        return result.rows.map(row => ({
+            id: row.id,
+            text: row.text,
+            rating: row.rating,
+            upvotes: row.upvotes,
+            downvotes: row.downvotes,
+            reported: row.reported,
+            createdAt: (row.created_at || new Date()).toISOString(),
+            teacherName: row.teacher_name,
+            subjectName: row.subject_name
+        }));
+    } catch (error) {
+        console.error("Erro ao buscar avaliações recentes:", error);
+        throw new Error("Falha ao buscar as avaliações mais recentes.");
+    } finally {
+        client.release();
+    }
+}
