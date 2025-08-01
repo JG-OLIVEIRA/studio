@@ -75,6 +75,19 @@ export async function initializeDatabase() {
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
                 );
             `);
+
+            // Add 'reported' column to reviews table if it doesn't exist
+            const reportedColumnExists = await client.query(`
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name='reviews' AND column_name='reported';
+            `);
+            if (reportedColumnExists.rowCount === 0) {
+                await client.query(`
+                    ALTER TABLE reviews 
+                    ADD COLUMN reported BOOLEAN NOT NULL DEFAULT false;
+                `);
+                console.log("Coluna 'reported' adicionada à tabela 'reviews'.");
+            }
             
             const dbSubjectsResult = await client.query('SELECT name FROM subjects');
             const dbSubjectNames = dbSubjectsResult.rows.map(s => s.name);
@@ -118,6 +131,7 @@ export async function getSubjects(): Promise<Subject[]> {
                 tr.rating as review_rating,
                 tr.upvotes as review_upvotes,
                 tr.downvotes as review_downvotes,
+                tr.reported as review_reported,
                 tr.created_at as review_created_at
             FROM subjects s
             LEFT JOIN (
@@ -127,11 +141,13 @@ export async function getSubjects(): Promise<Subject[]> {
                     reviews.rating,
                     reviews.upvotes, 
                     reviews.downvotes,
+                    reviews.reported,
                     reviews.created_at,
                     reviews.teacher_id, 
                     reviews.subject_id
                 FROM reviews
                 JOIN teachers ON reviews.teacher_id = teachers.id
+                WHERE reviews.reported = false
             ) tr ON s.id = tr.subject_id
             LEFT JOIN teachers t ON tr.teacher_id = t.id
             ORDER BY s.name, t.name;
@@ -181,6 +197,7 @@ export async function getSubjects(): Promise<Subject[]> {
                         rating: row.review_rating,
                         upvotes: row.review_upvotes,
                         downvotes: row.review_downvotes,
+                        reported: row.review_reported,
                         createdAt: (row.review_created_at || new Date()).toISOString(),
                     });
                 }
@@ -271,7 +288,6 @@ export async function upvoteReview(reviewId: number): Promise<void> {
     }
 }
 
-
 export async function downvoteReview(reviewId: number): Promise<void> {
     const client = await pool.connect();
     try {
@@ -283,6 +299,19 @@ export async function downvoteReview(reviewId: number): Promise<void> {
         client.release();
     }
 }
+
+export async function reportReview(reviewId: number): Promise<void> {
+    const client = await pool.connect();
+    try {
+        await client.query('UPDATE reviews SET reported = true WHERE id = $1', [reviewId]);
+    } catch (error) {
+        console.error("Erro ao denunciar avaliação:", error);
+        throw new Error("Falha ao registrar a denúncia.");
+    } finally {
+        client.release();
+    }
+}
+
 
 export async function getAllTeachers(): Promise<{ id: number; name: string }[]> {
     await initializeDatabase();
@@ -311,10 +340,11 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                 r.rating as review_rating,
                 r.upvotes as review_upvotes,
                 r.downvotes as review_downvotes,
+                r.reported as review_reported,
                 r.created_at as review_created_at,
                 s.name as subject_name
             FROM teachers t
-            LEFT JOIN reviews r ON t.id = r.teacher_id
+            LEFT JOIN reviews r ON t.id = r.teacher_id AND r.reported = false
             LEFT JOIN subjects s ON r.subject_id = s.id
             ORDER BY t.name, s.name;
         `;
@@ -342,6 +372,7 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                     rating: row.review_rating,
                     upvotes: row.review_upvotes,
                     downvotes: row.review_downvotes,
+                    reported: row.review_reported,
                     createdAt: (row.review_created_at || new Date()).toISOString(),
                 });
             }
@@ -375,7 +406,7 @@ export async function moderateAllReviews(): Promise<{ total: number; removed: nu
     
     try {
         await initializeDatabase();
-        const reviewsResult = await client.query('SELECT id, text FROM reviews');
+        const reviewsResult = await client.query('SELECT id, text FROM reviews WHERE reported = false');
         const reviews = reviewsResult.rows;
         const totalCount = reviews.length;
 
@@ -399,3 +430,6 @@ export async function moderateAllReviews(): Promise<{ total: number; removed: nu
         client.release();
     }
 }
+
+
+    
