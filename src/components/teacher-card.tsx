@@ -37,11 +37,11 @@ export default function TeacherCard({ teacher, isTopTeacher = false }: TeacherCa
                     <span className="text-sm font-bold text-muted-foreground">{averageRating.toFixed(1)}</span>
                 </>
             ) : (
-                 <StarRating rating={0} />
+                 <p className="text-sm text-muted-foreground">Nenhuma avaliação ainda</p>
             )}
         </div>
          <p className="text-sm text-muted-foreground mt-2">
-          {hasReviews ? `${teacher.reviews.length} ${teacher.reviews.length === 1 ? 'avaliação' : 'avaliações'}` : "Nenhuma avaliação ainda"}
+          {hasReviews ? `${teacher.reviews.length} ${teacher.reviews.length === 1 ? 'avaliação' : 'avaliações'}` : ""}
         </p>
       </CardContent>
       <CardFooter className="pt-4">

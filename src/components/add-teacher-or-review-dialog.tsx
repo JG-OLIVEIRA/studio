@@ -263,7 +263,7 @@ export function AddTeacherOrReviewDialog({
                             <ShieldAlert className="h-4 w-4 !text-primary" />
                             <AlertTitle className="font-semibold !text-primary">Aviso</AlertTitle>
                             <AlertDescription className="!text-primary/80">
-                                Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas serão removidas.
+                                Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas podem ser removidas.
                             </AlertDescription>
                         </Alert>
                         <div className="flex justify-end gap-2">

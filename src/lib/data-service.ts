@@ -8,7 +8,6 @@
 import 'server-only';
 import type { Subject, Teacher, Review } from './types';
 import { pool } from './db';
-import { moderateReviewFlow } from '@/ai/flows/moderate-review-flow';
 
 const curriculumSubjects = [
     "Geometria Analítica", "Cálculo I", "Cálculo II", "Cálculo III", "Cálculo IV", "Álgebra", "Matemática Discreta", "Fundamentos da Computação",
@@ -219,19 +218,11 @@ export async function addTeacherOrReview(data: {
   reviewText: string;
   reviewRating: number;
 }): Promise<void> {
-    // 1. Moderate the review text before anything else, if text is provided.
-    if(data.reviewText.trim()) {
-        const moderationResult = await moderateReviewFlow({ reviewText: data.reviewText });
-        if (moderationResult.isProblematic) {
-            throw new Error(moderationResult.reason || "A avaliação foi considerada inadequada e não pode ser publicada.");
-        }
-    }
-    
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        // 2. Find or create the teacher
+        // Find or create the teacher
         let teacherResult = await client.query('SELECT id FROM teachers WHERE name = $1', [data.teacherName]);
         let teacherId;
         if (teacherResult.rowCount === 0) {
@@ -241,7 +232,7 @@ export async function addTeacherOrReview(data: {
             teacherId = teacherResult.rows[0].id;
         }
 
-        // 3. For each subject, check for duplicates and then create the review
+        // For each subject, check for duplicates and then create the review
         for (const subjectName of data.subjectNames) {
             const subjectResult = await client.query('SELECT id FROM subjects WHERE name = $1', [subjectName]);
             if (subjectResult.rowCount === 0) {
