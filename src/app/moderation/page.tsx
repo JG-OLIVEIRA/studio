@@ -2,6 +2,9 @@
 import MainLayout from "@/components/main-layout";
 import { getReportedReviews, initializeDatabase } from "@/lib/data-service";
 import ModerationClient from "@/components/moderation-client";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default async function ModerationPage() {
     await initializeDatabase();
@@ -12,6 +15,12 @@ export default async function ModerationPage() {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
                 Ajude a manter a comunidade segura. Avalie as denúncias feitas por outros usuários.
             </p>
+            <Button asChild variant="outline">
+                <Link href="/">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Voltar para a Página Inicial
+                </Link>
+            </Button>
         </div>
     );
 
