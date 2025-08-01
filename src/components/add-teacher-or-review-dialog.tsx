@@ -125,8 +125,9 @@ export function AddTeacherOrReviewDialog({
         const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
         toast({
             variant: "destructive",
-            title: "Erro ao enviar avaliação",
+            title: "Erro ao Enviar Avaliação",
             description: errorMessage,
+            duration: 9000,
         });
     }
   }
@@ -261,6 +262,13 @@ export function AddTeacherOrReviewDialog({
                         </FormItem>
                     )}
                 />
+
+                <div className="flex items-center gap-2 text-xs text-muted-foreground p-3 bg-secondary/50 rounded-lg">
+                    <Shield className="h-8 w-8 flex-shrink-0" />
+                    <span>Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas serão removidas.</span>
+                </div>
+
+
                 <div className="flex justify-end gap-2 pt-4">
                     <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
                     <Button type="submit" disabled={form.formState.isSubmitting}>

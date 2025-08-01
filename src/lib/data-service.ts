@@ -8,6 +8,7 @@
 import 'server-only';
 import type { Subject, Teacher, Review } from './types';
 import { pool } from './db';
+import { moderateReview } from '@/ai/flows/moderate-review-flow';
 
 const curriculumSubjects = [
     "Geometria Analítica", "Cálculo I", "Cálculo II", "Cálculo III", "Cálculo IV", "Álgebra", "Matemática Discreta", "Fundamentos da Computação",
@@ -209,11 +210,17 @@ export async function addTeacherOrReview(data: {
   reviewText: string;
   reviewRating: number;
 }): Promise<void> {
+    // 1. Moderate the review text before anything else
+    const moderationResult = await moderateReview({ reviewText: data.reviewText });
+    if (moderationResult.isProblematic) {
+        throw new Error(moderationResult.reason || "A avaliação foi considerada inadequada e não pode ser publicada.");
+    }
+    
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        // Find or create the teacher
+        // 2. Find or create the teacher
         let teacherResult = await client.query('SELECT id FROM teachers WHERE name = $1', [data.teacherName]);
         let teacherId;
         if (teacherResult.rowCount === 0) {
@@ -223,12 +230,10 @@ export async function addTeacherOrReview(data: {
             teacherId = teacherResult.rows[0].id;
         }
 
-        // For each subject, create a review
+        // 3. For each subject, create the review
         for (const subjectName of data.subjectNames) {
             const subjectResult = await client.query('SELECT id FROM subjects WHERE name = $1', [subjectName]);
             if (subjectResult.rowCount === 0) {
-                // If a subject doesn't exist, we skip it but log a warning. 
-                // Or you could throw an error to fail the whole transaction.
                 console.warn(`Matéria "${subjectName}" não encontrada. Pulando.`);
                 continue; 
             }
@@ -244,6 +249,10 @@ export async function addTeacherOrReview(data: {
     } catch (error) {
         await client.query('ROLLBACK');
         console.error("Erro ao adicionar professor/avaliação:", error);
+        // Re-throw the original error if it's from our moderation, otherwise throw a generic one.
+        if (error instanceof Error && (error.message.includes("inadequada") || error.message.includes("viola"))) {
+            throw error;
+        }
         throw new Error("Falha ao salvar os dados no banco de dados.");
     } finally {
         client.release();
