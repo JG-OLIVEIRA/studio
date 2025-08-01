@@ -1,7 +1,6 @@
 
 'use server';
 
-import { runFullModeration, type ProblematicReview } from "@/ai/flows/moderate-all-reviews-flow";
 import * as DataService from '@/lib/data-service';
 import { revalidatePath } from 'next/cache';
 
@@ -79,11 +78,4 @@ export async function approveReviewAction(reviewId: number) {
 export async function deleteReviewAction(reviewId: number) {
     await DataService.deleteReview(reviewId);
     revalidatePath('/admin/dashboard');
-}
-
-/**
- * Server action to run AI moderation on all reviews.
- */
-export async function runAIModeration(): Promise<ProblematicReview[]> {
-    return runFullModeration();
 }
