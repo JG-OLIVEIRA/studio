@@ -247,7 +247,7 @@ export async function addTeacherOrReview(data: {
             teacherId = teacherResult.rows[0].id;
         }
 
-        // 3. For each subject, create the review
+        // 3. For each subject, check for duplicates and then create the review
         for (const subjectName of data.subjectNames) {
             const subjectResult = await client.query('SELECT id FROM subjects WHERE name = $1', [subjectName]);
             if (subjectResult.rowCount === 0) {
@@ -255,6 +255,17 @@ export async function addTeacherOrReview(data: {
                 continue; 
             }
             const subjectId = subjectResult.rows[0].id;
+
+            // Anti-spam: Check for an identical review
+            const duplicateCheck = await client.query(
+                'SELECT id FROM reviews WHERE teacher_id = $1 AND subject_id = $2 AND text = $3',
+                [teacherId, subjectId, data.reviewText]
+            );
+
+            if (duplicateCheck.rowCount > 0) {
+                 // Throw an error that will be caught and shown to the user
+                throw new Error(`Uma avaliação idêntica para o professor ${data.teacherName} na matéria ${subjectName} já foi enviada.`);
+            }
 
             await client.query(
                 'INSERT INTO reviews (text, rating, teacher_id, subject_id, created_at) VALUES ($1, $2, $3, $4, NOW())',
@@ -266,8 +277,8 @@ export async function addTeacherOrReview(data: {
     } catch (error) {
         await client.query('ROLLBACK');
         console.error("Erro ao adicionar professor/avaliação:", error);
-        // Re-throw the original error if it's from our moderation, otherwise throw a generic one.
-        if (error instanceof Error && (error.message.includes("inadequada") || error.message.includes("viola"))) {
+        // Re-throw the original error if it's from our logic, otherwise throw a generic one.
+        if (error instanceof Error && (error.message.includes("inadequada") || error.message.includes("idêntica"))) {
             throw error;
         }
         throw new Error("Falha ao salvar os dados no banco de dados.");

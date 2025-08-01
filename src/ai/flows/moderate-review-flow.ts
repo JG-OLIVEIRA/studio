@@ -47,6 +47,7 @@ const prompt = ai.definePrompt({
   3.  **Sem informações falsas ou acusações graves:** Não faça acusações criminosas ou alegações factuais graves que não possam ser comprovadas.
   4.  **Mantenha o foco no tópico:** A avaliação deve ser sobre o professor e a matéria, não sobre outros alunos ou assuntos irrelevantes.
   5.  **Não use linguagem vulgar ou obscena.**
+  6.  **Sem spam ou conteúdo de baixa qualidade:** Não são permitidas avaliações com textos repetitivos, sem sentido, ou que claramente não são uma avaliação genuína (ex: "show de bola show de bola show de bola").
 
   Texto da Avaliação:
   "{{{reviewText}}}"
@@ -58,6 +59,7 @@ const prompt = ai.definePrompt({
   -   Avaliação: "Eu odeio essa matéria, é a pior de todas." -> isProblematic: false (É uma opinião sobre a matéria, não um ataque ao professor).
   -   Avaliação: "A aula foi um pouco desorganizada, tive dificuldade em acompanhar." -> isProblematic: false.
   -   Avaliação: "Este professor assedia alunas." -> isProblematic: true, reason: "A avaliação contém uma acusação grave. Por favor, relate questões sérias à administração da universidade, não através de uma avaliação anônima."
+  -   Avaliação: "muito bom muito bom muito bom muito bom" -> isProblematic: true, reason: "A avaliação parece ser spam ou de baixa qualidade. Por favor, forneça um feedback mais detalhado e construtivo."
 
   Se a avaliação estiver de acordo com as diretrizes, retorne isProblematic: false, sem um motivo.
   `,
