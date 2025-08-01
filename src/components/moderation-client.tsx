@@ -132,7 +132,7 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>E-mail</FormLabel>
-                                    <FormControl><Input placeholder="seu.email@aluno.uerj.br" {...field} /></FormControl>
+                                    <FormControl><Input placeholder="seu.email@exemplo.com" {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
