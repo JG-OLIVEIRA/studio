@@ -31,6 +31,7 @@ const prompt = ai.definePrompt({
   name: 'realtimeModerateReviewPrompt',
   input: {schema: ModerateReviewInputSchema},
   output: {schema: ModerateReviewOutputSchema},
+  model: 'googleai/gemini-2.0-flash', // Use a faster model for real-time feedback
   config: {
     safetySettings: [
       {
