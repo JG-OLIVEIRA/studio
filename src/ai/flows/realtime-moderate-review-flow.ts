@@ -31,7 +31,6 @@ const prompt = ai.definePrompt({
   name: 'realtimeModerateReviewPrompt',
   input: {schema: ModerateReviewInputSchema},
   output: {schema: ModerateReviewOutputSchema},
-  model: 'googleai/gemini-2.0-flash', // Use a faster model for real-time feedback
   config: {
     safetySettings: [
       {
@@ -68,7 +67,7 @@ const prompt = ai.definePrompt({
   Examples:
   - Text: "O professor é um idiota" -> isProblematic: true, reason: "A avaliação contém um ataque pessoal. Por favor, seja respeitoso."
   - Text: "A aula foi um pouco desorganizada." -> isProblematic: false
-  - Text: "Este professor comete crimes" -> isProblematic: true, reason: "A avaliação contém uma acusação grave. Use canais apropriados."
+  - Text: "Este professor comete crimes" -> isProblemiac: true, reason: "A avaliação contém uma acusação grave. Use canais apropriados."
   - Text: "muito bom muito bom muito bom" -> isProblematic: true, reason: "O texto parece ser repetitivo ou spam."
   - Text: "que m*rda de aula" -> isProblematic: true, reason: "Por favor, evite usar linguagem vulgar ou ofensiva."
 
