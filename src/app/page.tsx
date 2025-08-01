@@ -1,5 +1,5 @@
 
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import { getTeachersWithGlobalStats, getSubjects } from '@/lib/data-service';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ export default async function TeachersPage() {
     getSubjects(),
   ]);
   
-  const allSubjectNames = subjects.map(s => s.name).sort((a,b) => a.localeCompare(b));
+  const allSubjectNames = subjects.map(s => s.name).sort((a,b) => a.localeCompare(b.name));
   const sortedTeachers = [...teachers].sort((a, b) => a.name.localeCompare(b.name));
 
   const headerContent = (
@@ -36,6 +36,16 @@ export default async function TeachersPage() {
                     Ver por Matéria
                 </Link>
             </Button>
+        </div>
+
+        <div className="mt-8 max-w-3xl w-full p-4 bg-secondary/50 border border-primary/20 rounded-lg text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+                <Megaphone className="h-5 w-5 text-primary"/>
+                <h3 className="text-md font-semibold text-foreground">Nosso Compromisso</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+                Este espaço foi criado para feedback construtivo. Lembre-se de ser respeitoso em suas avaliações, focando na didática e na sua experiência de aprendizado. O objetivo é ajudar alunos e professores a crescerem juntos.
+            </p>
         </div>
       </div>
   );
