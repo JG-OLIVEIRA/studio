@@ -7,7 +7,7 @@
 import 'server-only';
 import type { Subject, Teacher, Review } from './types';
 import { pool } from './db';
-import { moderateReviewFlow } from '@/ai/flows/moderate-review-flow';
+import { moderateReviewFlow } from '@/lib/genkit';
 
 
 const curriculumSubjects = [
