@@ -106,7 +106,7 @@ export function AddTeacherOrReviewDialog({
   // Effect to pre-select subjects when a teacher is chosen
   useEffect(() => {
     if (selectedTeacher) {
-      const existingSubjectsForTeacher = selectedTeacher.subjects ? Array.from(selectedTeacher.subjects) : [];
+      const existingSubjectsForTeacher = Array.from(selectedTeacher.subjects || []);
       form.setValue('subjectNames', existingSubjectsForTeacher, { shouldValidate: true });
     } else {
         // If teacher is cleared, clear subjects
