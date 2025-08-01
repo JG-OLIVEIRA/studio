@@ -9,74 +9,12 @@ import 'server-only';
 import type { Subject, Teacher, Review } from './types';
 import { pool } from './db';
 
-let initializationPromise: Promise<void> | null = null;
-
-// Função para popular/atualizar os professores
-async function seedTeachers(client: any) {
-    const officialTeachers = [
-        "Alexandre da Costa Sena", "Alexandre Sztajnberg", "Ana Carolina Brito de Almeida", "Bernardo Costa",
-        "Bianca Gama Pena", "Bruno Porto Masquio", "Carmen Dea França Gonçalves", "Claudia Cappelli",
-        "Eduardo Gonçalves Galúcio", "Evandro Luiz Cardoso Macedo", "Fabiano de Souza Oliveira", "Flávia Maria Santoro",
-        "Francisco Figueiredo Goytacaz Sant'Anna", "Gilson Alexandre Ostwald Pedro da Costa", "Guilherme Abelha",
-        "Helio do Nascimento Cunha Neto", "Karla Figueiredo", "Lis Ingrid Roque Lopes Custódio",
-        "Lucila Maria de Souza Bento", "Luerbio Faria", "Marcelo Schots de Oliveira", "Maria Clícia Stelling de Castro",
-        "Priscilla Fonseca de Abreu Braz", "Raissa dos Santos Barcellos", "Raphael Melo Guedes",
-        "Rosa Maria Esteves Moreira da Costa", "Roseli Suzi Wedemann", "Rubens Luiz Cirino", "Talita Vieira Ribeiro",
-        "Tassio Ferenzini Martins Sirqueira", "Tiago Assumpção de Oliveira Alves", "Vera Maria Benjamim Werneck"
-    ];
-
-    const nameMappings: { [key: string]: string } = {
-        'Alexandre Sena': 'Alexandre da Costa Sena',
-        'Flávia Santoro': 'Flávia Maria Santoro',
-        'Gilson': 'Gilson Alexandre Ostwald Pedro da Costa',
-        'Helio': 'Helio do Nascimento Cunha Neto',
-        'Lis Custódio': 'Lis Ingrid Roque Lopes Custódio',
-        'Lucila Bento': 'Lucila Maria de Souza Bento',
-        'Marcelo Schots': 'Marcelo Schots de Oliveira',
-        'Priscilla Fonseca Braz': 'Priscilla Fonseca de Abreu Braz',
-        'Raissa': 'Raissa dos Santos Barcellos',
-        'Roseli Suzi': 'Roseli Suzi Wedemann',
-        'Rubens Cirino': 'Rubens Luiz Cirino',
-        'Talita Ribeiro': 'Talita Vieira Ribeiro',
-        'Tassio Ferenzini': 'Tassio Ferenzini Martins Sirqueira',
-        'Tiago Assumpção': 'Tiago Assumpção de Oliveira Alves',
-        'Tassio Sirqueira': 'Tassio Ferenzini Martins Sirqueira',
-        'Noemi Rosa': 'Noemi dos Santos Rosa',
-        'James Ewan Skea': 'James Ewan Skea', // Example of keeping a name
-        'Rosiane': 'Rosiane Fátima da Cunha', // Placeholder, adjust if needed
-        'Claudio Anael': 'Claudio Anael da Silva' // Placeholder, adjust if needed
-    };
-
-    // Atualizar nomes existentes com base no mapeamento
-    for (const oldName in nameMappings) {
-        const newName = nameMappings[oldName];
-        await client.query('UPDATE teachers SET name = $1 WHERE name = $2', [newName, oldName]);
-    }
-
-    // Inserir professores que não existem
-    const existingTeachersResult = await client.query('SELECT name FROM teachers');
-    const existingNames = new Set(existingTeachersResult.rows.map((row: any) => row.name));
-
-    for (const name of officialTeachers) {
-        if (!existingNames.has(name)) {
-            await client.query('INSERT INTO teachers (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [name]);
-        }
-    }
-}
-
+let dbInitialized = false;
 
 export async function initializeDatabase(): Promise<void> {
-    if (initializationPromise) {
-        return initializationPromise;
+    if (dbInitialized) {
+        return;
     }
-
-    let resolve: () => void;
-    let reject: (reason?: any) => void;
-    initializationPromise = new Promise<void>((res, rej) => {
-        resolve = res;
-        reject = rej;
-    });
-
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -109,17 +47,14 @@ export async function initializeDatabase(): Promise<void> {
             );
         `);
         
-        await seedTeachers(client);
-        
         await client.query('COMMIT');
         
+        dbInitialized = true;
         console.log("Banco de dados inicializado com sucesso.");
-        resolve!();
     } catch (error) {
         await client.query('ROLLBACK');
         console.error("Erro durante a inicialização do banco de dados:", error);
-        initializationPromise = null;
-        reject!(new Error("Não foi possível inicializar o banco de dados."));
+        throw new Error("Não foi possível inicializar o banco de dados.");
     } finally {
         client.release();
     }
@@ -547,4 +482,6 @@ export async function approveReport(reviewId: number): Promise<void> {
         client.release();
     }
 }
+    
+
     
