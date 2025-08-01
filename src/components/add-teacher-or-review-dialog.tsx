@@ -36,7 +36,9 @@ import { MultiSelect } from './ui/multi-select';
 const formSchema = z.object({
   teacherName: z.string().trim()
     .min(3, "O nome do professor deve ter pelo menos 3 caracteres."),
-  subjectNames: z.array(z.string()).nonempty("É necessário selecionar pelo menos uma matéria."),
+  subjectNames: z.array(z.string()).refine(value => value.length > 0, {
+    message: "É necessário selecionar pelo menos uma matéria."
+  }),
   reviewText: z.string().trim()
     .max(1000, "A avaliação deve ter no máximo 1000 caracteres.")
     .optional(),
@@ -279,3 +281,5 @@ export function AddTeacherOrReviewDialog({
     </Dialog>
   );
 }
+
+    

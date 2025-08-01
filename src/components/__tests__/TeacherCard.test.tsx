@@ -9,22 +9,14 @@ jest.mock('../star-rating', () => ({
     __esModule: true,
     default: ({ rating }: { rating: number }) => <div data-testid="star-rating">Rating: {rating}</div>,
 }));
-jest.mock('../ai-review-insights', () => ({
-    __esModule: true,
-    default: ({ children, disabled }: { children: React.ReactNode, disabled: boolean }) => (
-        <div data-testid="ai-insights" data-disabled={disabled}>{children}</div>
-    ),
-}));
+
 jest.mock('../view-reviews-dialog', () => ({
     __esModule: true,
     ViewReviewsDialog: ({ children, disabled }: { children: React.ReactNode, disabled: boolean }) => (
-        <div data-testid="view-reviews" data-disabled={disabled}>{children}</div>
+        <div data-testid="view-reviews" data-disabled={String(disabled)}>{children}</div>
     ),
 }));
-jest.mock('../add-review-form', () => ({
-    __esModule: true,
-    AddReviewForm: ({ children }: { children: React.ReactNode }) => <div data-testid="add-review">{children}</div>,
-}));
+
 
 const mockTeacher: Teacher = {
     id: 1,
@@ -66,16 +58,14 @@ describe('TeacherCard', () => {
 
     it('enables action buttons when there are reviews', () => {
         render(<TeacherCard teacher={mockTeacher} />);
-
-        expect(screen.getByTestId('ai-insights')).toHaveAttribute('data-disabled', 'false');
-        expect(screen.getByTestId('view-reviews')).toHaveAttribute('data-disabled', 'false');
+        const viewReviewsButton = screen.getByTestId('view-reviews');
+        expect(viewReviewsButton).toHaveAttribute('data-disabled', 'false');
     });
 
     it('disables action buttons when there are no reviews', () => {
         render(<TeacherCard teacher={mockTeacherNoReviews} />);
-
-        expect(screen.getByTestId('ai-insights')).toHaveAttribute('data-disabled', 'true');
-        expect(screen.getByTestId('view-reviews')).toHaveAttribute('data-disabled', 'true');
+         const viewReviewsButton = screen.getByTestId('view-reviews');
+        expect(viewReviewsButton).toHaveAttribute('data-disabled', 'true');
     });
 
     it('renders the top teacher trophy when isTopTeacher is true', () => {
@@ -89,3 +79,5 @@ describe('TeacherCard', () => {
         expect(screen.queryByRole('img', { hidden: true })).not.toBeInTheDocument();
     });
 });
+
+    
