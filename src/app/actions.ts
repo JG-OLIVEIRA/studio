@@ -37,7 +37,6 @@ export async function handleAddTeacherOrReview(data: {
 
 /**
  * Server action to fetch all subjects data.
- * It calls the data service to interact with the database.
  */
 export async function getSubjectsData() {
     return DataService.getSubjects();
@@ -75,4 +74,23 @@ export async function reportReview(reviewId: number) {
  */
 export async function getAllTeachers() {
     return DataService.getAllTeachers();
+}
+
+
+// Admin actions
+
+/**
+ * Server action to approve a reported review.
+ */
+export async function approveReviewAction(reviewId: number) {
+    await DataService.approveReview(reviewId);
+    revalidatePath('/admin/dashboard');
+}
+
+/**
+ * Server action to delete a reported review.
+ */
+export async function deleteReviewAction(reviewId: number) {
+    await DataService.deleteReview(reviewId);
+    revalidatePath('/admin/dashboard');
 }

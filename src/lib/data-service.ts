@@ -312,7 +312,6 @@ export async function reportReview(reviewId: number): Promise<void> {
     }
 }
 
-
 export async function getAllTeachers(): Promise<{ id: number; name: string }[]> {
     await initializeDatabase();
     const client = await pool.connect();
@@ -431,5 +430,69 @@ export async function moderateAllReviews(): Promise<{ total: number; removed: nu
     }
 }
 
+// Admin Data Service Functions
 
-    
+export async function getReportedReviews(): Promise<(Review & { teacherName: string, subjectName: string })[]> {
+    await initializeDatabase();
+    const client = await pool.connect();
+    try {
+        const query = `
+            SELECT 
+                r.id,
+                r.text,
+                r.rating,
+                r.upvotes,
+                r.downvotes,
+                r.reported,
+                r.created_at,
+                t.name as teacher_name,
+                s.name as subject_name
+            FROM reviews r
+            JOIN teachers t ON r.teacher_id = t.id
+            JOIN subjects s ON r.subject_id = s.id
+            WHERE r.reported = true
+            ORDER BY r.created_at DESC;
+        `;
+        const result = await client.query(query);
+        return result.rows.map(row => ({
+            id: row.id,
+            text: row.text,
+            rating: row.rating,
+            upvotes: row.upvotes,
+            downvotes: row.downvotes,
+            reported: row.reported,
+            createdAt: (row.created_at || new Date()).toISOString(),
+            teacherName: row.teacher_name,
+            subjectName: row.subject_name
+        }));
+    } catch (error) {
+        console.error("Erro ao buscar avaliações denunciadas:", error);
+        throw new Error("Falha ao buscar dados de moderação.");
+    } finally {
+        client.release();
+    }
+}
+
+export async function approveReview(reviewId: number): Promise<void> {
+    const client = await pool.connect();
+    try {
+        await client.query('UPDATE reviews SET reported = false WHERE id = $1', [reviewId]);
+    } catch (error) {
+        console.error("Erro ao aprovar avaliação:", error);
+        throw new Error("Falha ao aprovar a avaliação no banco de dados.");
+    } finally {
+        client.release();
+    }
+}
+
+export async function deleteReview(reviewId: number): Promise<void> {
+    const client = await pool.connect();
+    try {
+        await client.query('DELETE FROM reviews WHERE id = $1', [reviewId]);
+    } catch (error) {
+        console.error("Erro ao deletar avaliação:", error);
+        throw new Error("Falha ao deletar a avaliação no banco de dados.");
+    } finally {
+        client.release();
+    }
+}
