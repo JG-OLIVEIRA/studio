@@ -1,24 +1,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySession } from '@/lib/session';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protect all admin routes except the login page itself
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login' && pathname !== '/admin') {
-    const session = await verifySession();
-    
-    // If there's no active session, redirect to the login page
-    if (!session) {
-      return NextResponse.redirect(new URL('/admin', request.url));
-    }
-  }
-  // Redirect /admin to /admin/login
+  // Redirect /admin to /admin/dashboard for convenience.
   if (pathname === '/admin') {
-    return NextResponse.redirect(new URL('/admin/login', request.url));
+    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
   }
-
 
   return NextResponse.next();
 }

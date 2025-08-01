@@ -1,7 +1,7 @@
 
 import { redirect } from "next/navigation";
 
-// This page just redirects to the login page.
+// This page just redirects to the dashboard page.
 export default function AdminRootPage() {
-    redirect('/admin/login');
+    redirect('/admin/dashboard');
 }
