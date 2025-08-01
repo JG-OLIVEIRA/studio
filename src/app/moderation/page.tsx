@@ -1,13 +1,13 @@
 
 import MainLayout from "@/components/main-layout";
-import { getReportedReviews, initializeDatabase } from "@/lib/data-service";
+import { getReportedReviews } from "@/lib/data-service";
 import ModerationClient from "@/components/moderation-client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default async function ModerationPage() {
-    await initializeDatabase();
+    // No longer need to initialize the database here, it's assumed to be ready.
     const reportedReviews = await getReportedReviews();
 
     const headerContent = (

@@ -9,57 +9,6 @@ import 'server-only';
 import type { Subject, Teacher, Review } from './types';
 import { pool } from './db';
 
-let dbInitialized = false;
-
-export async function initializeDatabase(): Promise<void> {
-    if (dbInitialized) {
-        return;
-    }
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        
-        // Criar tabelas principais
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS teachers (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL UNIQUE
-            );
-        `);
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS subjects (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL UNIQUE
-            );
-        `);
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS reviews (
-                id SERIAL PRIMARY KEY,
-                text TEXT,
-                rating INTEGER NOT NULL,
-                teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
-                subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
-                upvotes INTEGER DEFAULT 0,
-                downvotes INTEGER DEFAULT 0,
-                reported BOOLEAN DEFAULT false,
-                report_count INTEGER DEFAULT 0,
-                created_at TIMESTAMPTZ DEFAULT NOW()
-            );
-        `);
-        
-        await client.query('COMMIT');
-        
-        dbInitialized = true;
-        console.log("Banco de dados inicializado com sucesso.");
-    } catch (error) {
-        await client.query('ROLLBACK');
-        console.error("Erro durante a inicialização do banco de dados:", error);
-        throw new Error("Não foi possível inicializar o banco de dados.");
-    } finally {
-        client.release();
-    }
-}
-
 
 function assignIconName(subjectName: string): string {
     const name = subjectName.toLowerCase();
@@ -270,8 +219,10 @@ export async function downvoteReview(reviewId: number): Promise<void> {
 export async function reportReview(reviewId: number): Promise<void> {
     const client = await pool.connect();
     try {
+        // Simple report: just increments the count and sets the flag.
+        // More complex logic (like checking if user already reported) is removed for simplicity.
         await client.query(
-            'UPDATE reviews SET reported = true, report_count = 1 WHERE id = $1',
+            'UPDATE reviews SET reported = true, report_count = report_count + 1 WHERE id = $1',
             [reviewId]
         );
     } catch (error) {
@@ -482,6 +433,3 @@ export async function approveReport(reviewId: number): Promise<void> {
         client.release();
     }
 }
-    
-
-    
