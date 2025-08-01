@@ -2,14 +2,13 @@
 'use client';
 
 import * as LucideIcons from 'lucide-react';
-import type { Subject, Teacher } from '@/lib/types';
+import type { Subject } from '@/lib/types';
 import TeacherCard from '@/components/teacher-card';
 import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import FeaturedTeacher from './featured-teacher';
 
 const getIconComponent = (iconName: string): React.ElementType => {
   const IconComponent = (LucideIcons as any)[iconName];
@@ -35,12 +34,11 @@ export default function SubjectSection({ subject }: SubjectSectionProps) {
   return (
     <AccordionItem value={`subject-${subject.id}`} className="bg-card border rounded-lg shadow-sm">
         <AccordionTrigger className="hover:no-underline p-4">
-            <div id={`subject-title-${subject.id}`} className="flex items-center gap-4 w-full">
-                <Icon className="h-8 w-8 text-primary" />
-                <h3 className="text-xl font-semibold text-foreground text-left flex-1">
+            <div id={`subject-title-${subject.id}`} className="flex items-center gap-3 w-full">
+                <Icon className="h-6 w-6 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground text-left flex-1">
                 {subject.name}
                 </h3>
-                {topTeacher && <FeaturedTeacher teacher={topTeacher} />}
             </div>
         </AccordionTrigger>
       <AccordionContent>
