@@ -10,11 +10,15 @@ import { revalidatePath } from 'next/cache';
  */
 export async function handleAddTeacherOrReview(data: {
     teacherName: string;
-    subjectNames: string[]; // Alterado para aceitar múltiplos nomes de matérias
-    reviewText: string;
+    subjectNames: string[]; 
+    reviewText?: string; // Allow undefined
     reviewRating: number;
 }) {
-    await DataService.addTeacherOrReview(data);
+    // Pass the data, ensuring reviewText is a string
+    await DataService.addTeacherOrReview({
+        ...data,
+        reviewText: data.reviewText || '',
+    });
     revalidatePath('/'); // Revalida a página principal e a de matérias
     revalidatePath('/subjects');
 }
