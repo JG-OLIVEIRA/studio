@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/input';
 
 interface TeacherListClientProps {
   initialTeachers: Teacher[];
+  allSubjectNames: string[];
+  onSubmit: (data: any) => Promise<void>;
 }
 
-export default function TeacherListClient({ initialTeachers }: TeacherListClientProps) {
+export default function TeacherListClient({ initialTeachers, allSubjectNames, onSubmit }: TeacherListClientProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredTeachers = useMemo(() => {
@@ -54,7 +56,13 @@ export default function TeacherListClient({ initialTeachers }: TeacherListClient
             </div>
         ) : (
             filteredTeachers.map((teacher) => (
-              <TeacherListItem key={teacher.id} teacher={teacher} />
+              <TeacherListItem 
+                key={teacher.id} 
+                teacher={teacher}
+                allSubjectNames={allSubjectNames}
+                allTeachers={initialTeachers}
+                onSubmit={onSubmit}
+              />
             ))
         )}
       </div>

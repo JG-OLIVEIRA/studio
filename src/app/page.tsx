@@ -73,7 +73,11 @@ export default async function TeachersPage() {
         onSubmit={handleAddTeacherOrReview}
       />
       <div className="container mx-auto px-4 py-8">
-        <TeacherListClient initialTeachers={sortedTeachers} />
+        <TeacherListClient 
+          initialTeachers={sortedTeachers} 
+          allSubjectNames={allSubjectNames}
+          onSubmit={handleAddTeacherOrReview}
+        />
 
         <footer className="text-center mt-16 pb-8 space-y-2">
             <p className="text-sm text-muted-foreground">
