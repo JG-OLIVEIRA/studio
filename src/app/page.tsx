@@ -44,14 +44,20 @@ export default async function TeachersPage() {
             </Button>
         </div>
 
-        <div className="mt-8 max-w-3xl w-full p-4 bg-secondary/50 border border-primary/20 rounded-lg text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
+        <div className="mt-8 max-w-3xl w-full p-4 bg-secondary/50 border border-primary/20 rounded-lg text-center space-y-2">
+            <div className="flex items-center justify-center gap-2">
                 <Megaphone className="h-5 w-5 text-primary"/>
                 <h3 className="text-md font-semibold text-foreground">Nosso Compromisso</h3>
             </div>
             <p className="text-sm text-muted-foreground">
                 Este espaço foi criado para feedback construtivo. Lembre-se de ser respeitoso em suas avaliações, focando na didática e na sua experiência de aprendizado. O objetivo é ajudar alunos e professores a crescerem juntos.
             </p>
+             <Button asChild variant="link" size="sm" className="text-primary">
+              <Link href="/moderation">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Acessar o Painel de Moderação Comunitária
+              </Link>
+            </Button>
         </div>
       </div>
   );
@@ -73,12 +79,6 @@ export default async function TeachersPage() {
             <p className="text-sm text-muted-foreground">
                 Desenvolvido com a ajuda da IA do Firebase.
             </p>
-            <Button asChild variant="link" size="sm">
-              <Link href="/moderation">
-                <ShieldCheck className="mr-2 h-4 w-4" />
-                Painel de Moderação
-              </Link>
-            </Button>
         </footer>
       </div>
     </MainLayout>

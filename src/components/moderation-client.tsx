@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import type { Review } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -16,13 +16,35 @@ interface ModerationClientProps {
 }
 
 const APPROVAL_THRESHOLD = 5;
+const VOTED_REVIEWS_STORAGE_KEY = 'votedReviews';
 
 export default function ModerationClient({ initialReviews }: ModerationClientProps) {
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
+  const [votedOn, setVotedOn] = useState<Set<number>>(new Set());
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
+  useEffect(() => {
+    try {
+      const storedVoted = localStorage.getItem(VOTED_REVIEWS_STORAGE_KEY);
+      if (storedVoted) {
+        setVotedOn(new Set(JSON.parse(storedVoted)));
+      }
+    } catch (error) {
+        console.error("Failed to load voted reviews from localStorage", error);
+    }
+  }, []);
+
   const handleVote = (reviewId: number, action: 'approve' | 'reject') => {
+    if (votedOn.has(reviewId)) {
+        toast({
+            variant: "destructive",
+            title: "Voto já registrado",
+            description: "Você já votou nesta avaliação.",
+        });
+        return;
+    }
+
     startTransition(async () => {
       try {
         if (action === 'approve') {
@@ -30,11 +52,21 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
         } else {
           await rejectReportedReview(reviewId);
         }
+        
+        const newVotedOn = new Set(votedOn).add(reviewId);
+        setVotedOn(newVotedOn);
+        try {
+            localStorage.setItem(VOTED_REVIEWS_STORAGE_KEY, JSON.stringify(Array.from(newVotedOn)));
+        } catch (error) {
+            console.error("Failed to save voted reviews to localStorage", error);
+        }
+
         setReviews(prev => prev.filter(r => r.id !== reviewId));
         toast({
           title: 'Voto registrado!',
           description: `Obrigado por ajudar a moderar a comunidade.`,
         });
+
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
         toast({
@@ -96,11 +128,11 @@ export default function ModerationClient({ initialReviews }: ModerationClientPro
              </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => handleVote(review.id, 'reject')} disabled={isPending}>
+            <Button variant="outline" onClick={() => handleVote(review.id, 'reject')} disabled={isPending || votedOn.has(review.id)}>
               <ThumbsDown className="mr-2" />
               Manter Avaliação
             </Button>
-            <Button variant="destructive" onClick={() => handleVote(review.id, 'approve')} disabled={isPending}>
+            <Button variant="destructive" onClick={() => handleVote(review.id, 'approve')} disabled={isPending || votedOn.has(review.id)}>
               <ThumbsUp className="mr-2" />
               Remover Avaliação
             </Button>
