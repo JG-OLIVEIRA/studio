@@ -36,6 +36,8 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
     onChange(selected.filter((i) => i !== item))
   }
 
+  const selectedLabels = selected.map(val => options.find(opt => opt.value === val)?.label ?? val);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -43,30 +45,34 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between h-auto", className)}
+          className={cn("w-full justify-between", className)} // Removido h-auto
           onClick={() => setOpen(!open)}
         >
-          <div className="flex gap-1 flex-wrap">
+          <div className="flex-1 flex gap-1 items-center overflow-hidden">
             {selected.length > 0 ? (
-                selected.map((item) => (
+                <>
                     <Badge
                         variant="secondary"
-                        key={item}
-                        className="mr-1"
+                        className="whitespace-nowrap"
                         onClick={(e) => {
-                            e.stopPropagation(); // Evita que o popover feche
-                            handleUnselect(item);
+                            e.stopPropagation();
+                            handleUnselect(selected[0]);
                         }}
                     >
-                        {options.find(opt => opt.value === item)?.label ?? item}
+                        {selectedLabels[0]}
                         <X className="ml-1 h-3 w-3" />
                     </Badge>
-                ))
+                    {selected.length > 1 && (
+                        <span className="text-muted-foreground text-xs whitespace-nowrap">
+                           + {selected.length - 1} {selected.length -1 === 1 ? 'outro' : 'outros'}
+                        </span>
+                    )}
+                </>
             ) : (
                 <span className="text-muted-foreground">{placeholder}</span>
             )}
           </div>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 ml-2" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
