@@ -1,7 +1,7 @@
 
 import { BookOpen, Megaphone } from 'lucide-react';
 import Link from 'next/link';
-import { getTeachersWithGlobalStats, getSubjects } from '@/lib/data-service';
+import { getTeachersWithGlobalStats } from '@/lib/data-service';
 import { Button } from '@/components/ui/button';
 import { AddTeacherOrReviewDialog } from '@/components/add-teacher-or-review-dialog';
 import { handleAddTeacherOrReview } from './actions';
@@ -11,12 +11,18 @@ import WelcomeReviewHandler from '@/components/welcome-review-handler';
 
 export default async function TeachersPage() {
   // Fetch all data in parallel
-  const [teachers, subjects] = await Promise.all([
-    getTeachersWithGlobalStats(),
-    getSubjects(),
-  ]);
+  const teachers = await getTeachersWithGlobalStats();
   
-  const allSubjectNames = subjects.map(s => s.name).sort((a,b) => a.localeCompare(b.name));
+  // Get all unique subject names from the teachers list
+  const allSubjectNames = Array.from(
+    teachers.reduce((acc, teacher) => {
+      if (teacher.subjects) {
+        teacher.subjects.forEach(subjectName => acc.add(subjectName));
+      }
+      return acc;
+    }, new Set<string>())
+  ).sort((a,b) => a.localeCompare(b));
+
   const sortedTeachers = [...teachers].sort((a, b) => a.name.localeCompare(b.name));
 
   const headerContent = (
