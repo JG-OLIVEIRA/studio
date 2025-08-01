@@ -1,12 +1,12 @@
 
 
-import { getSubjectsData } from '@/app/actions';
+import { getSubjects } from '@/lib/data-service';
 import TeacherRateClient from '@/components/teacher-rate-client';
 import MainLayout from '@/components/main-layout';
 import SubjectsHeaderActions from '@/components/subjects-header-actions';
 
 export default async function SubjectsPage() {
-  const subjectsData = await getSubjectsData();
+  const subjectsData = await getSubjects();
 
   const headerContent = (
     <div className="flex flex-col items-center justify-center text-center w-full">
