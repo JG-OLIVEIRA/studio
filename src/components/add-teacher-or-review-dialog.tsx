@@ -24,12 +24,13 @@ import {
     DialogTrigger
   } from './ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Star, PlusCircle, Shield } from 'lucide-react';
+import { Star, PlusCircle, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Combobox } from './ui/combobox';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 import type { Teacher } from '@/lib/types';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 const formSchema = z.object({
   teacherName: z.string().trim()
@@ -263,10 +264,13 @@ export function AddTeacherOrReviewDialog({
                     )}
                 />
 
-                <div className="flex items-center gap-2 text-xs text-muted-foreground p-3 bg-secondary/50 rounded-lg">
-                    <Shield className="h-8 w-8 flex-shrink-0" />
-                    <span>Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas serão removidas.</span>
-                </div>
+                <Alert variant="destructive" className="bg-destructive/10 text-destructive-foreground border-destructive/20">
+                    <ShieldAlert className="h-4 w-4 !text-destructive" />
+                    <AlertTitle className="font-semibold !text-destructive">Aviso</AlertTitle>
+                    <AlertDescription className="!text-destructive/80">
+                        Lembre-se de ser respeitoso e focar na didática. Avaliações com ataques pessoais, discurso de ódio ou informações falsas serão removidas pela moderação de IA.
+                    </AlertDescription>
+                </Alert>
 
 
                 <div className="flex justify-end gap-2 pt-4">
