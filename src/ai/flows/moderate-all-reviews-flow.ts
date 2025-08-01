@@ -11,7 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { getAllReviewsForModeration } from '@/lib/data-service';
-import { moderateReview, type ModerateReviewOutput } from './moderate-review-flow';
+import { moderateReviewFlow, type ModerateReviewOutput } from './moderate-review-flow';
 import type { Review } from '@/lib/types';
 
 
@@ -49,7 +49,7 @@ const runFullModerationFlow = ai.defineFlow(
     // Process reviews in parallel to speed up the process
     const moderationPromises = reviewsToModerate.map(async (review) => {
         try {
-            const moderationResult = await moderateReview({ reviewText: review.text });
+            const moderationResult = await moderateReviewFlow({ reviewText: review.text });
             if (moderationResult.isProblematic && moderationResult.reason) {
                 return {
                     ...review,

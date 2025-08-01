@@ -54,7 +54,7 @@ const prompt = ai.definePrompt({
   `,
 });
 
-const moderateReviewFlow = ai.defineFlow(
+export const moderateReviewFlow = ai.defineFlow(
   {
     name: 'moderateReviewFlow',
     inputSchema: ModerateReviewInputSchema,

@@ -456,8 +456,7 @@ export async function getAllReviewsForModeration(): Promise<(Review & { teacherN
             FROM reviews r
             JOIN teachers t ON r.teacher_id = t.id
             JOIN subjects s ON r.subject_id = s.id
-            WHERE r.reported = false
-            ORDER BY r.created_at DESC;
+            WHERE r.reported = false;
         `;
          const result = await client.query(query);
         return result.rows.map(row => ({
