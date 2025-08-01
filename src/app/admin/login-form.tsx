@@ -1,14 +1,13 @@
 
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { login } from './actions';
+import { login } from '../actions';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, LogIn, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useState } from 'react';
 
 export function LoginForm() {
   const [state, action] = useActionState(login, undefined);
