@@ -283,7 +283,6 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                 r.downvotes as review_downvotes,
                 r.created_at as review_created_at,
                 r.report_count as review_report_count,
-                r.report_approvals as review_report_approvals,
                 s.name as subject_name
             FROM reviews r
             JOIN teachers t ON r.teacher_id = t.id
@@ -306,7 +305,7 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                         downvotes: row.review_downvotes,
                         createdAt: (row.created_at || new Date()).toISOString(),
                         report_count: row.review_report_count,
-                        report_approvals: row.review_report_approvals,
+                        report_approvals: 0, // Default value
                     });
                 }
                 if (row.subject_name) {
