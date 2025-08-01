@@ -71,7 +71,7 @@ export async function getAllTeachers() {
  */
 export async function login(password: string) {
     if (password === process.env.ADMIN_SECRET) {
-      cookies().set('admin-auth', 'true', {
+      (await cookies()).set('admin-auth', 'true', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 60 * 60 * 24, // 24 hours
@@ -86,7 +86,7 @@ export async function login(password: string) {
  * Server action for admin logout.
  */
 export async function logout() {
-    cookies().set('admin-auth', '', { expires: new Date(0), path: '/' });
+    (await cookies()).set('admin-auth', '', { expires: new Date(0), path: '/' });
     redirect('/admin/login');
 }
 
