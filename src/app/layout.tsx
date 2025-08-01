@@ -5,8 +5,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 
 
 export const metadata: Metadata = {
-  title: 'CcompTeacherRate',
-  description: 'CcompTeacherRate: Encontre e avalie os melhores professores de Ciência da Computação.',
+  title: 'CcompUerjTeacherRate',
+  description: 'CcompUerjTeacherRate: Encontre e avalie os melhores professores de Ciência da Computação da UERJ.',
   icons: null,
 };
 
@@ -16,12 +16,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className="dark">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=VT323&display=swap"
           rel="stylesheet"
         />
       </head>

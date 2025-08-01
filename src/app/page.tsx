@@ -22,7 +22,7 @@ export default async function TeachersPage() {
   const headerContent = (
       <div className="flex flex-col items-center justify-center text-center">
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-          O lugar central para encontrar e avaliar os professores de Ciência da Computação.
+          O lugar central para encontrar e avaliar os professores de Ciência da Computação da UERJ.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <AddTeacherOrReviewDialog
@@ -52,7 +52,7 @@ export default async function TeachersPage() {
 
   return (
     <MainLayout headerProps={{
-      pageTitle: 'CcompTeacherRate',
+      pageTitle: 'CcompUerjTeacherRate',
       pageIconName: 'GraduationCap',
       children: headerContent
     }}>

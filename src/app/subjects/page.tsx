@@ -11,7 +11,7 @@ export default async function SubjectsPage() {
   const headerContent = (
     <div className="flex flex-col items-center justify-center text-center w-full">
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-            O lugar central para encontrar e avaliar os professores de Ciência da Computação.
+            O lugar central para encontrar e avaliar os professores de Ciência da Computação da UERJ.
         </p>
         <SubjectsHeaderActions />
     </div>
@@ -19,7 +19,7 @@ export default async function SubjectsPage() {
 
   return (
     <MainLayout headerProps={{
-        pageTitle: 'CcompTeacherRate',
+        pageTitle: 'CcompUerjTeacherRate',
         pageIconName: 'GraduationCap',
         children: headerContent
     }}>
