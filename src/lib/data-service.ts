@@ -26,7 +26,35 @@ export async function initializeDatabase(): Promise<void> {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-
+        
+        // Criar tabelas principais
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS teachers (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL UNIQUE
+            );
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS subjects (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL UNIQUE
+            );
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS reviews (
+                id SERIAL PRIMARY KEY,
+                text TEXT,
+                rating INTEGER NOT NULL,
+                teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+                subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+                upvotes INTEGER DEFAULT 0,
+                downvotes INTEGER DEFAULT 0,
+                reported BOOLEAN DEFAULT false,
+                report_count INTEGER DEFAULT 0,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            );
+        `);
+        
         // Criar tabela de votos de moderação
         await client.query(`
             CREATE TABLE IF NOT EXISTS moderation_votes (
