@@ -106,7 +106,7 @@ export async function getSubjects(): Promise<Subject[]> {
                         rating: row.review_rating,
                         upvotes: row.review_upvotes,
                         downvotes: row.review_downvotes,
-                        createdAt: (row.review_created_at || new Date()).toISOString(),
+                        createdAt: row.review_created_at.toISOString(),
                         report_count: 0,
                     });
                 }
@@ -297,7 +297,7 @@ export async function getTeachersWithGlobalStats(): Promise<Teacher[]> {
                         rating: row.review_rating,
                         upvotes: row.review_upvotes,
                         downvotes: row.review_downvotes,
-                        createdAt: (row.review_created_at || new Date()).toISOString(),
+                        createdAt: row.review_created_at.toISOString(),
                         report_count: row.review_report_count,
                     });
                 }
@@ -351,7 +351,7 @@ export async function getRecentReviews(): Promise<Review[]> {
             upvotes: row.upvotes,
             downvotes: row.downvotes,
             report_count: 0, // Not needed for this view
-            createdAt: (row.created_at || new Date()).toISOString(),
+            createdAt: row.created_at.toISOString(),
             teacherName: row.teacher_name,
             subjectName: row.subject_name,
         }));
@@ -392,7 +392,7 @@ export async function getReportedReviews(): Promise<Review[]> {
             upvotes: row.upvotes,
             downvotes: row.downvotes,
             report_count: row.report_count,
-            createdAt: (row.created_at || new Date()).toISOString(),
+            createdAt: row.created_at.toISOString(),
             teacherName: row.teacher_name,
             subjectName: row.subject_name,
         }));
